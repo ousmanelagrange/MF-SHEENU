@@ -60,3 +60,93 @@ def new_invitation_token() -> tuple[str, str]:
 
 def hash_token(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
+
+
+# ---------- Robustesse des mots de passe ----------
+
+# Les mots de passe les plus utilisés (listes publiques de fuites), en minuscules
+COMMON = {
+    "12345678",
+    "123456789",
+    "1234567890",
+    "password",
+    "password1",
+    "motdepasse",
+    "azertyuiop",
+    "qwertyuiop",
+    "azerty123",
+    "qwerty123",
+    "iloveyou",
+    "11111111",
+    "00000000",
+    "88888888",
+    "abcd1234",
+    "abc12345",
+    "12341234",
+    "87654321",
+    "sunshine",
+    "princess",
+    "football",
+    "baseball",
+    "welcome1",
+    "admin123",
+    "letmein1",
+    "cameroun",
+    "cameroon",
+    "bonjour1",
+    "famille1",
+    "sheenu123",
+    "passw0rd",
+    "p@ssw0rd",
+    "trustno1",
+    "dragon12",
+    "monkey12",
+}
+
+# Une empreinte réelle d'un mot de passe aléatoire : la vérifier quand le compte n'existe
+# pas prend le même temps qu'une vraie vérification (on ne devine pas les comptes au chrono).
+DUMMY_HASH = bcrypt.hashpw(secrets.token_bytes(16), bcrypt.gensalt()).decode()
+
+
+def weak_password(password: str, *personal: str | None) -> str | None:
+    """Motif du refus si le mot de passe est trop faible, sinon None."""
+    low = password.lower()
+    if low in COMMON or len(set(low)) <= 2:
+        return (
+            "Ce mot de passe est trop courant. Choisissez une phrase ou un mélange plus personnel."
+        )
+    for value in personal:
+        for part in (value or "").lower().replace("@", " ").replace(".", " ").split():
+            if len(part) >= 4 and part in low:
+                return "Le mot de passe ne doit pas reprendre votre nom ou votre identifiant."
+    return None
+
+
+def create_session_tokens(
+    user_id: UUID, token_version: int, session_id: UUID, rotation: int
+) -> tuple[str, str]:
+    """Jetons d'une session d'appareil : l'accès (30 min) et le rafraîchissement, qui porte
+    la session et son numéro de rotation pour détecter un jeton réutilisé."""
+    s = get_settings()
+    now = datetime.now(UTC)
+    base = {
+        "sub": str(user_id),
+        "ver": token_version,
+        "sid": str(session_id),
+        "iat": int(now.timestamp()),
+    }
+    access = {
+        **base,
+        "typ": "access",
+        "exp": int((now + timedelta(minutes=s.access_token_minutes)).timestamp()),
+    }
+    refresh = {
+        **base,
+        "typ": "refresh",
+        "rot": rotation,
+        "exp": int((now + timedelta(days=s.refresh_token_days)).timestamp()),
+    }
+    return (
+        jwt.encode(access, s.jwt_secret, algorithm=s.jwt_algorithm),
+        jwt.encode(refresh, s.jwt_secret, algorithm=s.jwt_algorithm),
+    )

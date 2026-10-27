@@ -5,7 +5,7 @@ from typing import Annotated
 from uuid import UUID
 
 import jwt
-from fastapi import Depends, Header
+from fastapi import Depends, Header, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -64,6 +64,7 @@ class FamilyContext:
 
 
 def get_family_context(
+    request: Request,
     db: DB,
     user: CurrentUser,
     x_family_id: Annotated[UUID | None, Header()] = None,
@@ -78,6 +79,10 @@ def get_family_context(
         )
     )
     if membership is None:
+        # Un compte qui vise une famille dont il n'est pas membre : à surveiller
+        from app.security import events  # import tardif : events dépend des modèles
+
+        events.record("foreign_family", request, user.id, family=x_family_id)
         raise AppError(403, "not_a_member", "Vous n'êtes pas membre de cette famille.")
     family = db.get(Family, x_family_id)
     if family.merged_into_id:
@@ -100,3 +105,13 @@ def require_roles(*roles: str):
 
 AdminCtx = Annotated[FamilyContext, require_roles(Role.ADMIN)]
 InviterCtx = Annotated[FamilyContext, require_roles(Role.ADMIN, Role.BRANCH_HEAD)]
+
+
+def get_operator(user: CurrentUser) -> User:
+    """Opérateur de la plateforme : accès à la supervision, jamais au contenu des familles."""
+    if not user.is_platform_admin:
+        raise AppError(403, "forbidden", "Réservé à l'opérateur de la plateforme.")
+    return user
+
+
+Operator = Annotated[User, Depends(get_operator)]

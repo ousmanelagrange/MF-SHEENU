@@ -19,6 +19,7 @@ from app.modules.memory.schemas import (
     PhotoOut,
     PhotoUpdate,
 )
+from app.security.media import own_media
 
 router = APIRouter(tags=["memory"])
 
@@ -115,7 +116,7 @@ def add_photo(album_id: UUID, body: PhotoIn, ctx: Ctx) -> PhotoOut:
     photo = AlbumPhoto(
         family_id=ctx.family.id,
         album_id=album.id,
-        url=body.url,
+        url=own_media(ctx.family.id, body.url),
         caption=body.caption,
         year=body.year or album.year,
         person_ids=service.check_persons(graph, body.person_ids),

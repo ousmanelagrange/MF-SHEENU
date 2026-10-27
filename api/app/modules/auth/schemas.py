@@ -1,5 +1,6 @@
 """Schémas Pydantic du module."""
 
+from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
@@ -23,12 +24,26 @@ class RegisterIn(BaseModel):
 
 
 class LoginIn(BaseModel):
-    login: str = Field(description="E-mail ou numéro de téléphone")
-    password: str
+    login: str = Field(max_length=255, description="E-mail ou numéro de téléphone")
+    password: str = Field(max_length=128)
 
 
 class RefreshIn(BaseModel):
-    refresh_token: str
+    refresh_token: str = Field(max_length=2000)
+
+
+class PasswordIn(BaseModel):
+    current_password: str = Field(max_length=128)
+    new_password: str = Field(min_length=8, max_length=128)
+
+
+class SessionOut(BaseModel):
+    id: UUID
+    created_at: datetime
+    last_used_at: datetime
+    ip: str | None
+    user_agent: str | None
+    current: bool
 
 
 class TokenOut(BaseModel):
@@ -43,6 +58,7 @@ class UserOut(ORM):
     phone: str | None
     full_name: str
     locale: str
+    is_platform_admin: bool = False
 
 
 class UserUpdate(BaseModel):

@@ -32,6 +32,9 @@ class Settings(BaseSettings):
     s3_secret_key: str | None = None
     s3_public_url: str | None = None
 
+    # Limitation de débit (désactivée seulement dans les tests qui créent beaucoup de comptes)
+    rate_limit: bool = True
+
     # Messagerie (phase 6) : « share » prépare des liens WhatsApp à ouvrir soi-même (gratuit) ;
     # « whatsapp_cloud » envoie par l'API WhatsApp Business de Meta (payante, jetons requis).
     messaging_backend: str = "share"
@@ -62,3 +65,32 @@ class Settings(BaseSettings):
 @lru_cache
 def get_settings() -> Settings:
     return Settings()
+
+
+WEAK_SECRETS = {
+    "change-me-in-production-please-use-a-long-random-string",
+    "change-me-webhook-secret",
+}
+
+
+def check_production(s: Settings) -> None:
+    """En production, refuse de démarrer si un réglage expose les familles."""
+    if s.environment != "production":
+        return
+    problems = []
+    if s.jwt_secret in WEAK_SECRETS or len(s.jwt_secret) < 32:
+        problems.append("JWT_SECRET doit être un secret aléatoire d'au moins 32 caractères")
+    if s.payment_backend != "none" and (
+        s.payment_webhook_secret in WEAK_SECRETS or len(s.payment_webhook_secret) < 32
+    ):
+        problems.append(
+            "PAYMENT_WEBHOOK_SECRET doit être un secret aléatoire d'au moins 32 caractères"
+        )
+    if "*" in s.cors_origins or any(
+        o.startswith("http://") and "localhost" not in o for o in s.cors_origin_list
+    ):
+        problems.append("CORS_ORIGINS doit lister les domaines HTTPS du site, sans « * »")
+    if not s.public_api_url.startswith("https://") or not s.public_web_url.startswith("https://"):
+        problems.append("PUBLIC_API_URL et PUBLIC_WEB_URL doivent être en HTTPS")
+    if problems:
+        raise RuntimeError("Configuration de production refusée : " + " ; ".join(problems))

@@ -277,10 +277,13 @@ def test_photo_upload(api):
     )
     assert r.status_code == 200, r.text
     url = r.json()["photo_url"]
-    assert url.endswith(".webp")
+    assert ".webp?exp=" in url and "&sig=" in url  # adresse signée, à durée limitée
     path = url.split("/media/", 1)[1]
     img = api.c.get(f"/media/{path}")
     assert img.status_code == 200
+    # Sans signature, ou avec une signature altérée : refusé
+    assert api.c.get(f"/media/{path.split('?')[0]}").status_code == 403
+    assert api.c.get(f"/media/{path[:-2]}xx").status_code == 403
     bad = api.c.post(
         f"/api/v1/persons/{ids['a']}/photo",
         headers=api.h,

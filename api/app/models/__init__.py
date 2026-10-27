@@ -16,6 +16,13 @@ from app.models.integration import JoinLink, JoinRequest, JoinStatus, Notificati
 from app.models.invitation import Invitation
 from app.models.memory import Album, AlbumPhoto, Layer, Narrative, NarrativeText, TextStatus
 from app.models.person import Person
+from app.models.platform import (
+    AuthSession,
+    IdempotencyKey,
+    PlatformAudit,
+    RequestMetric,
+    SecurityEvent,
+)
 from app.models.proposal import Proposal, ProposalStatus
 from app.models.relation import FamilyUnion, ParentChild
 from app.models.social import (
@@ -104,5 +111,10 @@ __all__ = [
     "JoinRequest",
     "JoinStatus",
     "PaymentIntent",
+    "SecurityEvent",
+    "AuthSession",
+    "IdempotencyKey",
+    "RequestMetric",
+    "PlatformAudit",
     "RLS_TABLES",
 ]

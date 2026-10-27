@@ -32,6 +32,7 @@ from app.models import (
 from app.modules.contributions import service
 from app.modules.contributions.reports import money
 from app.modules.persons.schemas import PersonSummary
+from app.security import events, ratelimit
 from app.shared import audit
 
 router = APIRouter(tags=["contributions"])
@@ -206,9 +207,12 @@ async def payment_webhook(
     gateway = get_gateway()
     if gateway is None or gateway.name != provider:
         raise not_found("Prestataire")
+    ratelimit.enforce("webhook", events.client_ip(request) or "?", request)
     try:
         event = gateway.parse_webhook(await request.body(), x_signature)
-    except InvalidSignatureError as exc:
+    except (InvalidSignatureError, ValueError, KeyError) as exc:
+        # Webhook forgé ou altéré : on refuse et on alerte la supervision
+        events.record("bad_signature", request, provider=provider)
         raise AppError(401, "invalid_signature", "Signature invalide.") from exc
     intent = db.scalar(
         select(PaymentIntent).where(

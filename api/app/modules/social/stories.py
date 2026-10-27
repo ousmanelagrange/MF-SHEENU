@@ -12,6 +12,7 @@ from app.genealogy.graph import load_graph
 from app.models import Story
 from app.modules.social import service
 from app.modules.social.schemas import StoryGroup, StoryIn, StoryOut
+from app.security.media import own_media
 
 router = APIRouter(prefix="/stories", tags=["social"])
 
@@ -50,7 +51,7 @@ def add_story(body: StoryIn, ctx: Ctx) -> StoryOut:
     story = Story(
         family_id=ctx.family.id,
         author_id=ctx.user.id,
-        media_url=body.media_url,
+        media_url=own_media(ctx.family.id, body.media_url),
         caption=body.caption,
         created_at=now,
         expires_at=now + LIFETIME,

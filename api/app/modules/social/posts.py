@@ -21,6 +21,7 @@ from app.modules.social.schemas import (
     ReactionIn,
     VoteIn,
 )
+from app.security.media import own_media
 from app.shared.notify import members, notify
 
 router = APIRouter(tags=["social"])
@@ -74,7 +75,7 @@ def create_post(body: PostIn, ctx: Ctx) -> PostOut:
         kind=body.kind,
         life_event=body.life_event if body.kind == PostKind.LIFE_EVENT else None,
         text=body.text.strip(),
-        media=body.media,
+        media=[own_media(ctx.family.id, u) for u in body.media],
         person_ids=[str(p) for p in body.person_ids],
         on_behalf_of=body.on_behalf_of,
         pinned=body.kind == PostKind.ANNOUNCEMENT,  # une annonce officielle est épinglée d'office

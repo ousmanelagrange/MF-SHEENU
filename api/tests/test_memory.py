@@ -1,7 +1,7 @@
 """Phase 5 — mémoire : récits, couches de transcription et de traduction validées,
 albums et identification sur les photos, frise chronologique, envoi d'audio."""
 
-from tests.conftest import build_family, join_as
+from tests.conftest import build_family, join_as, png_bytes
 
 
 def setup(client, api):
@@ -72,9 +72,14 @@ def test_narrative_edit_rights(client, api):
 def test_albums_and_identification(client, api):
     ids, ali = setup(client, api)
     album = api.post("/albums", {"title": "Mariage de 1975", "year": 1975}).json()
+    # Un lien externe (pixel de suivi, image non contrôlée) est refusé
+    external = ali.post(f"/albums/{album['id']}/photos", {"url": "https://exemple.com/p.jpg"})
+    assert external.json()["detail"]["code"] == "invalid_media"
+    files = {"file": ("p.png", png_bytes(), "image/png")}
+    uploaded = client.post("/api/v1/uploads/image", files=files, headers=ali.h).json()["url"]
     photo = ali.post(
         f"/albums/{album['id']}/photos",
-        {"url": "http://localhost/p1.webp", "caption": "Les mariés", "person_ids": [ids["a"]]},
+        {"url": uploaded, "caption": "Les mariés", "person_ids": [ids["a"]]},
     ).json()
     assert photo["year"] == 1975  # hérite de l'année de l'album
     assert photo["persons"][0]["first_name"] == "Alpha"
@@ -85,7 +90,7 @@ def test_albums_and_identification(client, api):
     assert bachir.patch(f"/album-photos/{photo['id']}", {"caption": "x"}).status_code == 403
     assert len(api.get(f"/persons/{ids['b']}/photos").json()) == 1
     cards = api.get("/albums").json()
-    assert cards[0]["count"] == 1 and cards[0]["cover_url"] == "http://localhost/p1.webp"
+    assert cards[0]["count"] == 1 and cards[0]["cover_url"].split("?")[0] == uploaded.split("?")[0]
     assert bachir.delete(f"/album-photos/{photo['id']}").status_code == 403
     assert ali.delete(f"/album-photos/{photo['id']}").status_code == 204
 
@@ -110,6 +115,12 @@ def test_media_upload(client, api):
     files = {"file": ("recit.webm", b"\x1aE\xdf\xa3" + b"0" * 100, "audio/webm;codecs=opus")}
     r = client.post("/api/v1/uploads/media", files=files, headers=api.h)
     assert r.status_code == 201 and r.json()["kind"] == "audio"
-    assert r.json()["url"].endswith(".webm")
+    assert ".webm?exp=" in r.json()["url"]
+    # Un fichier qui se dit audio mais n'en est pas un (ici un exécutable) est refusé
+    fake = {"file": ("recit.mp3", b"MZ\x90\x00" + b"0" * 100, "audio/mpeg")}
+    assert (
+        client.post("/api/v1/uploads/media", files=fake, headers=api.h).json()["detail"]["code"]
+        == "invalid_media"
+    )
     bad = {"file": ("x.exe", b"MZ", "application/octet-stream")}
     assert client.post("/api/v1/uploads/media", files=bad, headers=api.h).status_code == 400

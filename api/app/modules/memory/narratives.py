@@ -19,6 +19,7 @@ from app.modules.memory.schemas import (
     TextIn,
     TextOut,
 )
+from app.security.media import own_media
 from app.shared import audit
 from app.shared.notify import notify
 
@@ -61,7 +62,7 @@ def create_narrative(body: NarrativeIn, ctx: Ctx) -> NarrativeOut:
         language=body.language,
         teller_id=body.teller_id,
         recorded_by=ctx.user.id,
-        media_url=body.media_url,
+        media_url=own_media(ctx.family.id, body.media_url) if body.media_url else None,
         media_kind=body.media_kind if body.media_url else None,
         year=body.year,
         era=body.era,

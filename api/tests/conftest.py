@@ -5,6 +5,7 @@ os.environ.setdefault(
     "DATABASE_URL", "postgresql+psycopg://lignee:lignee@localhost:5432/lignee_test"
 )
 os.environ.setdefault("MEDIA_DIR", "/tmp/lignee-test-media")
+os.environ.setdefault("RATE_LIMIT", "false")  # réactivée dans tests/test_security.py
 
 import pytest  # noqa: E402
 from fastapi.testclient import TestClient  # noqa: E402
@@ -14,6 +15,11 @@ from app.core.db import engine  # noqa: E402
 from app.main import app  # noqa: E402
 
 TABLES = [
+    "auth_session",
+    "idempotency_key",
+    "request_metric",
+    "platform_audit",
+    "security_event",
     "notification",
     "join_request",
     "join_link",

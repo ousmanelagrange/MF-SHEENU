@@ -12,6 +12,8 @@ from app.core.errors import bad_request
 
 MAX_BYTES = 5 * 1024 * 1024
 MAX_SIDE = 800
+# Une image « bombe » (petite à l'envoi, énorme une fois décompressée) est refusée
+Image.MAX_IMAGE_PIXELS = 40_000_000
 MAX_MEDIA_BYTES = 30 * 1024 * 1024  # un récit de 30 min en audio compressé tient largement
 
 # Formats acceptés pour les récits : type MIME -> (extension, nature)
@@ -34,14 +36,36 @@ def process_image(raw: bytes) -> bytes:
         raise bad_request("file_too_large", "Image trop lourde (5 Mo maximum).")
     try:
         img = Image.open(io.BytesIO(raw))
+        if img.format not in ("JPEG", "PNG", "WEBP", "GIF", "HEIC", "MPO"):
+            raise ValueError(img.format)
         img = ImageOps.exif_transpose(img)
-        img = img.convert("RGB")
+        img = img.convert("RGB")  # réencodée : métadonnées (GPS…) et contenu caché éliminés
     except Exception as exc:  # noqa: BLE001
         raise bad_request("invalid_image", "Fichier image illisible.") from exc
     img.thumbnail((MAX_SIDE, MAX_SIDE))
     out = io.BytesIO()
     img.save(out, format="WEBP", quality=82)
     return out.getvalue()
+
+
+def looks_like(raw: bytes, ext: str) -> bool:
+    """Vérifie la signature binaire (« nombre magique ») du fichier selon son extension."""
+    head = raw[:16]
+    if ext in ("mp4", "m4a", "mov"):
+        return head[4:8] == b"ftyp"
+    if ext == "webm":
+        return head.startswith(b"\x1a\x45\xdf\xa3")
+    if ext == "ogg":
+        return head.startswith(b"OggS")
+    if ext == "wav":
+        return head.startswith(b"RIFF") and head[8:12] == b"WAVE"
+    if ext == "mp3":
+        return head.startswith(b"ID3") or (
+            len(head) > 1 and head[0] == 0xFF and head[1] & 0xE0 == 0xE0
+        )
+    if ext == "aac":
+        return len(head) > 1 and head[0] == 0xFF and head[1] & 0xF6 == 0xF0
+    return False
 
 
 def _put(key: str, data: bytes, content_type: str) -> str:
@@ -79,5 +103,8 @@ def save_media(family_id: uuid.UUID, raw: bytes, content_type: str | None) -> tu
     if len(raw) > MAX_MEDIA_BYTES:
         raise bad_request("file_too_large", "Fichier trop lourd (30 Mo maximum).")
     ext, kind = MEDIA_TYPES[base_type]
+    if not looks_like(raw, ext):
+        # Le type annoncé ne correspond pas au contenu réel du fichier : refusé
+        raise bad_request("invalid_media", "Le contenu du fichier ne correspond pas à son type.")
     key = f"families/{family_id}/media/{uuid.uuid4().hex}.{ext}"
     return _put(key, raw, base_type), kind

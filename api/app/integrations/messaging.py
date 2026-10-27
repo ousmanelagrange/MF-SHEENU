@@ -88,7 +88,8 @@ class WhatsAppCloudMessenger:
             headers={"Authorization": f"Bearer {self.token}", "Content-Type": "application/json"},
         )
         try:
-            with urllib.request.urlopen(request, timeout=10):
+            # Adresse fixe en https://graph.facebook.com (pas de schéma choisi par un client)
+            with urllib.request.urlopen(request, timeout=10):  # nosec B310
                 return Delivery("sent", link)
         except (urllib.error.URLError, TimeoutError) as exc:
             # En cas d'échec, le lien permet encore l'envoi à la main
