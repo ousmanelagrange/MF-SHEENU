@@ -5,7 +5,6 @@ from uuid import UUID
 from fastapi import APIRouter
 from sqlalchemy import func, select
 
-from app.core.config import get_settings
 from app.core.db import set_family_context
 from app.core.deps import DB, AdminCtx, Ctx, CurrentUser, FamilyContext
 from app.core.errors import bad_request, conflict, not_found
@@ -22,11 +21,6 @@ from app.shared import audit
 
 router = APIRouter(tags=["families"])
 
-
-def count_memberships(db, user_id: UUID) -> int:  # noqa: ANN001
-    return db.scalar(
-        select(func.count()).select_from(Membership).where(Membership.user_id == user_id)
-    )
 
 
 @router.get("/families", response_model=list[MyFamilyOut])
@@ -45,11 +39,6 @@ def my_families(user: CurrentUser, db: DB) -> list[MyFamilyOut]:
 
 @router.post("/families", response_model=MyFamilyOut, status_code=201)
 def create_family(body: FamilyCreate, user: CurrentUser, db: DB) -> MyFamilyOut:
-    if count_memberships(db, user.id) >= get_settings().max_families_per_user:
-        raise conflict(
-            "family_limit_reached",
-            f"Un compte peut appartenir à {get_settings().max_families_per_user} familles au plus.",
-        )
     family = Family(
         name=body.name.strip(),
         community=body.community,

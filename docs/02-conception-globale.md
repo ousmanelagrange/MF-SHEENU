@@ -244,7 +244,7 @@ sequenceDiagram
   A-->>W: famille, invitant, personne pressentie
   V->>W: Crée son compte ou se connecte
   W->>A: POST /invitations/{token}/accept
-  A->>A: Vérifie expiration, usage unique, limite de 2 familles
+  A->>A: Vérifie expiration, usage unique, appartenance existante
   A-->>W: appartenance créée, fiche liée
 ```
 

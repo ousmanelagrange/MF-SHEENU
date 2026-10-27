@@ -213,14 +213,14 @@ def test_branch_head_scope(client, api):
     assert head.post("/invitations", {"person_id": ids["a1"]}).status_code == 403
 
 
-def test_family_limit(client):
+def test_no_limit_on_families(client):
+    """Une famille est comme un groupe WhatsApp : un compte peut en créer et en rejoindre autant qu'il veut."""
     a = Api(client, "multi@example.com")
-    a.create_family("F1")
-    a.create_family("F2")
-    r = a.post("/families", {"name": "F3", "my_first_name": "Moi"})
-    assert r.json()["detail"]["code"] == "family_limit_reached"
-    assert len(a.get("/families").json()) == 2
-
+    for name in ("Famille paternelle", "Famille maternelle", "Mon foyer", "Belle-famille"):
+        a.create_family(name)
+    families = a.get("/families").json()
+    assert len(families) == 4
+    assert {f["role"] for f in families} == {"admin"}
 
 def test_contact_visibility(client, api):
     ids = build_family(api)

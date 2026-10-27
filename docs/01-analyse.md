@@ -46,14 +46,14 @@ Les grandes familles africaines s'organisent aujourd'hui dans des groupes WhatsA
 | **Bureau / Administrateur** | Responsables de l'association | Configuration de la famille : titres, règles de cotisation, rôles, racine |
 | **Système** | Tâches automatiques | Rappels d'anniversaires, résumés hebdomadaires, calculs |
 
-Une même personne peut cumuler plusieurs rôles. Un compte peut appartenir à **deux familles au plus** ; ses rôles sont propres à chaque famille.
+Une même personne peut cumuler plusieurs rôles. Un compte peut appartenir à **autant de familles que nécessaire**, comme à des groupes WhatsApp ; son rôle et sa fiche sont propres à chaque famille.
 
 ## 5. Règles métier
 
 ### 5.1 Familles et appartenance
 - **RG-01** Une famille est un espace **strictement privé**. Aucune donnée n'est visible hors de ses membres.
-- **RG-02** Les familles ne sont **pas reliées** entre elles. Un compte appartenant à deux familles possède une fiche personne distincte dans chacune.
-- **RG-03** Un compte appartient à **2 familles au maximum** (paramètre système modifiable).
+- **RG-02** Les familles ne sont **pas reliées** entre elles. Un compte appartenant à plusieurs familles possède une fiche personne distincte dans chacune.
+- **RG-03** Tout utilisateur peut **créer une famille**, de la plus petite (un foyer : père, mère, enfants) à la plus grande, et appartenir à **autant de familles qu'il le souhaite**, avec un rôle différent dans chacune.
 - **RG-04** On entre dans une famille uniquement **par invitation** d'un chef de branche ou du bureau, ou par demande de rattachement validée.
 - **RG-05** Chaque famille a **un ancêtre racine**. La racine peut être **remontée** en ajoutant les parents de l'ancêtre racine actuel.
 
@@ -131,7 +131,7 @@ flowchart LR
 - *Acteur* : visiteur invité.
 - *Préconditions* : un chef de branche ou le bureau a créé une invitation, éventuellement liée à une fiche personne existante.
 - *Scénario* : 1) le visiteur ouvre le lien reçu sur WhatsApp ; 2) il voit le nom de la famille et de la personne qui l'invite ; 3) il crée son compte (nom, e-mail ou téléphone, mot de passe) ou se connecte s'il a déjà un compte ; 4) il est rattaché à la famille, et à sa fiche personne si l'invitation en désignait une.
-- *Exceptions* : invitation expirée ou déjà utilisée ; compte déjà membre de 2 familles (RG-03).
+- *Exceptions* : invitation expirée ou déjà utilisée ; compte déjà membre de cette famille.
 
 **UC2 — Consulter l'arbre**
 - *Acteur* : membre.

@@ -1,4 +1,4 @@
-// Choix de la famille (deux au plus par compte) et création de l'espace d'une famille.
+// Choix de la famille (autant qu'on veut, comme des groupes WhatsApp) et création d'un espace familial.
 
 import { useLogout } from "@refinedev/core";
 import { Alert, Button, Form, Input, Modal, Select, Spin } from "antd";
@@ -52,8 +52,8 @@ export function FamiliesPage() {
         </div>
         <h1 className="page__title">Vos familles</h1>
         <p className="page__lead">
-          Un compte peut appartenir à deux familles, par exemple paternelle et maternelle. Elles restent
-          séparées : aucune ne voit l'autre.
+          Comme des groupes WhatsApp : votre famille paternelle, maternelle, votre foyer… Dans chacune vous avez
+          votre rôle et votre fiche, et aucune ne voit les autres.
         </p>
         {!items ? (
           <Spin style={{ marginTop: 32 }} />
@@ -89,7 +89,7 @@ export function FamiliesPage() {
             l'espace de votre famille si vous en êtes responsable.
           </p>
         )}
-        {items && items.length < 2 && (
+        {items && (
           <Button style={{ marginTop: 28 }} onClick={() => setCreating(true)}>
             Créer l'espace d'une famille
           </Button>

@@ -296,7 +296,7 @@ Base : `/api/v1`. Authentification : `Authorization: Bearer <access_token>`. Con
 | 401 | `not_authenticated`, `invalid_credentials`, `token_expired` |
 | 403 | `not_a_member`, `forbidden`, `out_of_scope` |
 | 404 | `not_found` |
-| 409 | `already_exists`, `cycle_detected`, `too_many_parents`, `family_limit_reached` |
+| 409 | `already_exists`, `cycle_detected`, `too_many_parents` |
 
 ### 3.2 Points d'entrée
 
@@ -421,7 +421,6 @@ Un script `seed_demo.py` crée une famille de démonstration sur 6 générations
 | `PUBLIC_WEB_URL` | `https://lignee.vercel.app` | Base des liens d'invitation |
 | `STORAGE_BACKEND` | `local` ou `s3` | Stockage des photos |
 | `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_PUBLIC_URL` | | Cloudflare R2 |
-| `MAX_FAMILIES_PER_USER` | `2` | RG-03 |
 
 
 ## 8. Phase 2 — Gouvernance

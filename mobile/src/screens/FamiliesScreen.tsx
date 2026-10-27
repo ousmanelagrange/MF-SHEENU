@@ -1,4 +1,4 @@
-// Choix de la famille à ouvrir (deux au plus par compte).
+// Choix de la famille à ouvrir (un compte peut appartenir à plusieurs familles).
 
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
@@ -16,7 +16,7 @@ export function FamiliesScreen({ onPick, onLogout }: { onPick: (f: MyFamily) => 
   return (
     <ScrollView style={{ backgroundColor: colors.cotton }} contentContainerStyle={{ paddingBottom: 40 }}>
       <Text style={[s.lead, { padding: 20 }]}>
-        Un compte peut appartenir à deux familles. Elles restent séparées : aucune ne voit l'autre.
+        Comme des groupes WhatsApp : dans chaque famille vous avez votre rôle et votre fiche, et aucune ne voit les autres.
       </Text>
       {!items && <ActivityIndicator style={{ marginTop: 24 }} />}
       {items?.map((f) => (

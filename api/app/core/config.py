@@ -22,7 +22,6 @@ class Settings(BaseSettings):
     public_web_url: str = "http://localhost:5173"
 
     invitation_days: int = 7
-    max_families_per_user: int = 2
 
     storage_backend: str = "local"  # local | s3
     media_dir: str = "media"
