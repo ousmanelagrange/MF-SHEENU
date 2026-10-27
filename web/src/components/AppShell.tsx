@@ -7,6 +7,8 @@ import {
   DatabaseOutlined,
   CrownOutlined,
   HomeOutlined,
+  MessageOutlined,
+  SafetyOutlined,
   MenuOutlined,
   NodeIndexOutlined,
   TeamOutlined,
@@ -43,6 +45,7 @@ export function AppShell() {
 
   const items = [
     { key: "/", icon: <HomeOutlined />, label: "Accueil" },
+    { key: "/fil", icon: <MessageOutlined />, label: "Fil de la famille" },
     { key: "/arbre", icon: <ApartmentOutlined />, label: "Arbre" },
     { key: "/personnes", icon: <TeamOutlined />, label: "Personnes" },
     { key: "/parente", icon: <NodeIndexOutlined />, label: "Lien de parenté" },
@@ -66,6 +69,7 @@ export function AppShell() {
       ? [
           { key: "/titres", icon: <CrownOutlined />, label: "Titres" },
           { key: "/donnees", icon: <DatabaseOutlined />, label: "Données" },
+          { key: "/moderation", icon: <SafetyOutlined />, label: "Modération" },
           { key: "/journal", icon: <AuditOutlined />, label: "Journal" },
         ]
       : []),

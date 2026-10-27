@@ -26,6 +26,8 @@ import { ScalesPage } from "./features/contributions/ScalesPage";
 import { DataPage } from "./features/data/DataPage";
 import { MergeJoinPage } from "./features/family-merge/MergeJoinPage";
 import { ProposalsPage } from "./features/proposals/ProposalsPage";
+import { FeedPage } from "./features/social/FeedPage";
+import { ModerationPage } from "./features/social/ModerationPage";
 import { TreePage } from "./features/tree/TreePage";
 import { authProvider } from "./providers/authProvider";
 import { dataProvider } from "./providers/dataProvider";
@@ -67,6 +69,8 @@ export default function App() {
                   <Route path="/reunir/:token" element={<MergeJoinPage />} />
                   <Route element={<AppShell />}>
                     <Route index element={<HomePage />} />
+                    <Route path="/fil" element={<FeedPage />} />
+                    <Route path="/moderation" element={<ModerationPage />} />
                     <Route path="/arbre" element={<TreePage />} />
                     <Route path="/personnes" element={<PersonsPage />} />
                     <Route path="/personnes/nouvelle" element={<PersonFormPage />} />

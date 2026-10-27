@@ -239,3 +239,59 @@ export interface PersonContribution {
   paid: number;
   status: DueStatus;
 }
+
+// ---------- Vie sociale ----------
+
+export interface Author {
+  user_id: string;
+  name: string;
+  person: PersonSummary | null;
+}
+
+export interface PollOption {
+  id: string;
+  label: string;
+  votes: number;
+}
+
+export interface Post {
+  id: string;
+  kind: "post" | "announcement" | "life_event" | "poll";
+  life_event: "birth" | "wedding" | "death" | "success" | "other" | null;
+  text: string;
+  media: string[];
+  persons: PersonSummary[];
+  author: Author;
+  on_behalf_of: PersonSummary | null;
+  pinned: boolean;
+  hidden: boolean;
+  created_at: string;
+  edited_at: string | null;
+  reactions: Record<string, number>;
+  my_reaction: string | null;
+  comments_count: number;
+  poll: PollOption[] | null;
+  my_vote: string | null;
+  can_edit: boolean;
+  can_moderate: boolean;
+}
+
+export interface CommentItem {
+  id: string;
+  author: Author;
+  text: string;
+  created_at: string;
+  can_delete: boolean;
+}
+
+export interface StoryGroup {
+  author: Author;
+  stories: { id: string; media_url: string; caption: string | null; created_at: string; expires_at: string }[];
+}
+
+export interface Birthday {
+  person: PersonSummary;
+  date: string;
+  age: number | null;
+  in_days: number;
+}

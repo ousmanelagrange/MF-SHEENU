@@ -9,6 +9,7 @@ import { PersonLine } from "../../components/Person";
 import { useFamily } from "../../lib/family";
 import type { PersonDetail, Stats } from "../../types";
 import { ContributionHistory } from "../contributions/components/ContributionHistory";
+import { Birthdays } from "../social/components/Birthdays";
 
 export function HomePage() {
   const { family } = useFamily();
@@ -104,7 +105,8 @@ export function HomePage() {
         </section>
 
         <section className="kin-group">
-          <h2>Personnes par génération</h2>
+          <Birthdays days={14} />
+          <h2 style={{ marginTop: 32 }}>Personnes par génération</h2>
           <div className="gen-bars">
             {gens.map(([g, n]) => (
               <div key={g} className="gen-bars__row">
