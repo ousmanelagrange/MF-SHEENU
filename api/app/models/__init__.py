@@ -13,6 +13,7 @@ from app.models.delegation import Delegation
 from app.models.family import Family, Membership, Role
 from app.models.family_merge import FamilyMerge
 from app.models.invitation import Invitation
+from app.models.memory import Album, AlbumPhoto, Layer, Narrative, NarrativeText, TextStatus
 from app.models.person import Person
 from app.models.proposal import Proposal, ProposalStatus
 from app.models.relation import FamilyUnion, ParentChild
@@ -52,6 +53,10 @@ RLS_TABLES = (
     "story",
     "report",
     "memorial_message",
+    "narrative",
+    "narrative_text",
+    "album",
+    "album_photo",
 )
 
 __all__ = [
@@ -85,5 +90,11 @@ __all__ = [
     "Story",
     "Report",
     "MemorialMessage",
+    "Narrative",
+    "NarrativeText",
+    "Layer",
+    "TextStatus",
+    "Album",
+    "AlbumPhoto",
     "RLS_TABLES",
 ]

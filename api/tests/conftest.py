@@ -14,6 +14,10 @@ from app.core.db import engine  # noqa: E402
 from app.main import app  # noqa: E402
 
 TABLES = [
+    "narrative_text",
+    "narrative",
+    "album_photo",
+    "album",
     "memorial_message",
     "report",
     "reaction",

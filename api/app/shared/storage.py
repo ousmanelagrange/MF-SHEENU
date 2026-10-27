@@ -1,4 +1,5 @@
-"""Stockage des photos : disque local en développement, S3 / Cloudflare R2 en production."""
+"""Stockage des fichiers (photos, enregistrements des récits) : disque local en développement,
+S3 / Cloudflare R2 en production."""
 
 import io
 import uuid
@@ -11,6 +12,21 @@ from app.core.errors import bad_request
 
 MAX_BYTES = 5 * 1024 * 1024
 MAX_SIDE = 800
+MAX_MEDIA_BYTES = 30 * 1024 * 1024  # un récit de 30 min en audio compressé tient largement
+
+# Formats acceptés pour les récits : type MIME -> (extension, nature)
+MEDIA_TYPES = {
+    "audio/mpeg": ("mp3", "audio"),
+    "audio/mp4": ("m4a", "audio"),
+    "audio/x-m4a": ("m4a", "audio"),
+    "audio/aac": ("aac", "audio"),
+    "audio/ogg": ("ogg", "audio"),
+    "audio/webm": ("webm", "audio"),
+    "audio/wav": ("wav", "audio"),
+    "video/mp4": ("mp4", "video"),
+    "video/webm": ("webm", "video"),
+    "video/quicktime": ("mov", "video"),
+}
 
 
 def process_image(raw: bytes) -> bytes:
@@ -28,11 +44,9 @@ def process_image(raw: bytes) -> bytes:
     return out.getvalue()
 
 
-def save_photo(family_id: uuid.UUID, raw: bytes) -> str:
-    """Enregistre l'image redimensionnée et renvoie son URL publique."""
-    data = process_image(raw)
+def _put(key: str, data: bytes, content_type: str) -> str:
+    """Range le fichier sous `key` et renvoie son adresse publique."""
     s = get_settings()
-    key = f"families/{family_id}/photos/{uuid.uuid4().hex}.webp"
     if s.storage_backend == "s3":
         import boto3
 
@@ -43,9 +57,27 @@ def save_photo(family_id: uuid.UUID, raw: bytes) -> str:
             aws_secret_access_key=s.s3_secret_key,
             region_name="auto",
         )
-        client.put_object(Bucket=s.s3_bucket, Key=key, Body=data, ContentType="image/webp")
+        client.put_object(Bucket=s.s3_bucket, Key=key, Body=data, ContentType=content_type)
         return f"{s.s3_public_url.rstrip('/')}/{key}"
     path = Path(s.media_dir) / key
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_bytes(data)
     return f"{s.public_api_url.rstrip('/')}/media/{key}"
+
+
+def save_photo(family_id: uuid.UUID, raw: bytes) -> str:
+    """Enregistre l'image redimensionnée et renvoie son URL publique."""
+    key = f"families/{family_id}/photos/{uuid.uuid4().hex}.webp"
+    return _put(key, process_image(raw), "image/webp")
+
+
+def save_media(family_id: uuid.UUID, raw: bytes, content_type: str | None) -> tuple[str, str]:
+    """Enregistre un fichier audio ou vidéo tel quel ; renvoie (adresse, « audio » | « video »)."""
+    base_type = (content_type or "").split(";")[0].strip().lower()
+    if base_type not in MEDIA_TYPES:
+        raise bad_request("invalid_media", "Format non pris en charge (audio ou vidéo attendu).")
+    if len(raw) > MAX_MEDIA_BYTES:
+        raise bad_request("file_too_large", "Fichier trop lourd (30 Mo maximum).")
+    ext, kind = MEDIA_TYPES[base_type]
+    key = f"families/{family_id}/media/{uuid.uuid4().hex}.{ext}"
+    return _put(key, raw, base_type), kind
