@@ -658,3 +658,71 @@ Le trésorier (`treasurer`) et l'administrateur gèrent ; tout membre consulte e
 | Web | `/cotisations/baremes` | Barèmes : montant par génération, exemption d'âge, conjoints |
 | Web | Accueil, fiche | Mes cotisations en cours ; historique de la personne |
 | Mobile | Onglet Cotisations | Collectes, ma part, déclarer, valider (trésorier), état de chacun |
+
+### 9.6 Réunir deux familles
+
+Deux familles créées séparément (une micro-famille et la grande famille, deux branches qui se découvrent) peuvent n'en faire plus qu'une. Le choix retenu est une **absorption validée des deux côtés**, sans lien permanent entre familles, pour garder l'isolement strict (RLS) :
+
+1. l'administrateur de la famille **d'accueil** crée une demande (`POST /family-merges`) et obtient un lien à usage unique, valable 7 jours par défaut, avec un texte prêt à envoyer par WhatsApp ;
+2. l'administrateur de la famille **source** ouvre le lien (`GET /family-merges/token/{t}`) : il voit la famille qui l'accueillerait et qui le propose ;
+3. depuis sa famille, il confirme (`POST /family-merges/token/{t}/accept`). L'opération est définitive.
+
+Dans une seule transaction, l'arbre source est copié dans la famille d'accueil (personnes, filiations, unions, titres regroupés par nom, délégations) ; un inscrit présent des deux côtés garde une seule fiche. Les autres personnes communes se rapprochent ensuite avec l'outil de doublons (§8.5). Les inscrits rejoignent la famille d'accueil : un administrateur source devient chef de sa branche, trésorier et secrétaire redeviennent membres. La famille source est marquée `merged_into_id` : elle disparaît des listes et toute requête sur elle répond `410 family_merged`. Collectes, propositions et journal restent attachés à la source comme archive.
+
+| Écran | Contenu |
+|---|---|
+| Web `/donnees` | « Réunir une autre famille à la nôtre » : créer le lien |
+| Web `/reunir/:token` | Aperçu, choix de la famille source, confirmation |
+
+## 10. Phase 4 — Vie sociale
+
+### 10.1 Tables (migration 0005, toutes sous RLS)
+
+| Table | Rôle |
+|---|---|
+| `post` | Publication : `kind` (post, announcement, life_event, poll), `life_event`, texte, photos (`media`), personnes citées, `on_behalf_of` (publié pour un ancien délégué), `pinned`, `hidden` |
+| `poll_option`, `poll_vote` | Choix d'un sondage ; un vote par membre, modifiable |
+| `comment` | Commentaire d'une publication |
+| `reaction` | Une réaction par membre et par publication (like, love, pray, clap) |
+| `story` | Photo visible 24 h (`expires_at`) |
+| `report` | Signalement d'une publication ou d'un commentaire, avec motif et décision |
+| `memorial_message` | Hommage déposé sur la fiche d'une personne décédée |
+
+### 10.2 Règles
+
+- Seuls l'administrateur et le secrétaire (la « modération ») publient des **annonces officielles** ; une annonce est épinglée d'office et s'affiche en tête du fil.
+- Une **annonce de vie** peut être publiée au nom d'une personne confiée (délégation, RG-15).
+- Un membre ne voit pas les contenus masqués ; la modération les voit, signalés comme tels.
+- Une story expire au bout de 24 heures ; elle n'est plus listée ensuite.
+- Le mémorial n'existe que pour une personne décédée. L'auteur ou la modération retire un hommage.
+- Les anniversaires listent les personnes vivantes dont la date complète est connue, sur les N prochains jours.
+
+### 10.3 Points d'entrée
+
+| Méthode | Chemin | Accès | Rôle |
+|---|---|---|---|
+| GET | `/feed?before=&kind=` | membre | Fil paginé (20), épinglées d'abord |
+| POST | `/posts` | membre (annonce : modération) | Publier |
+| GET / PATCH / DELETE | `/posts/{id}` | membre ; auteur ou modération | Lire, corriger, épingler, masquer, supprimer |
+| PUT / DELETE | `/posts/{id}/reaction` | membre | Réagir, retirer sa réaction |
+| POST | `/posts/{id}/vote` | membre | Voter |
+| GET / POST | `/posts/{id}/comments` | membre | Commentaires |
+| DELETE | `/comments/{id}` | auteur, modération | Supprimer |
+| GET / POST / DELETE | `/stories` | membre | Stories du jour |
+| POST / GET | `/reports` | membre ; modération | Signaler ; liste en attente |
+| POST | `/reports/{id}/resolve?hide=` | modération | Masquer ou classer |
+| GET / POST | `/persons/{id}/memorial` | membre | Hommages |
+| DELETE | `/memorial/{id}` | auteur, modération | Retirer |
+| GET | `/birthdays?days=` | membre | Anniversaires à venir |
+
+### 10.4 Écrans
+
+| Plateforme | Écran | Contenu |
+|---|---|---|
+| Web | `/fil` | Stories, rédaction (publication, annonce de vie, sondage, annonce officielle, photo, identification), filtres, publications, anniversaires |
+| Web | `/moderation` | Signalements en attente : masquer ou classer |
+| Web | Fiche d'un défunt | Mémorial |
+| Web | Accueil | Anniversaires à venir |
+| Mobile | Onglet Fil | Stories, publication rapide (texte), réactions, votes |
+| Mobile | Publication | Publication ouverte et commentaires |
+| Mobile | Moi → Propositions | Les propositions quittent la barre d'onglets au profit du Fil ; le badge reste sur « Moi » |

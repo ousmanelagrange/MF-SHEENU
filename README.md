@@ -44,6 +44,6 @@ npm run dev                     # http://localhost:5173
 | 1. Cœur | Comptes, familles, invitations, personnes, liens, arbre, parenté, titres, exports | Terminée |
 | 2. Gouvernance | Propositions et validation, délégation, import GEDCOM, doublons et fusion, arbre mobile | Terminée |
 | 3. Cotisations | Barèmes, collectes, déclarations, validation, tableau transparent, récapitulatif WhatsApp | Terminée |
-| 4. Vie sociale | Fil, stories, annonces, mémoriaux, anniversaires | À venir |
+| 4. Vie sociale | Fil, stories, annonces, sondages, modération, mémoriaux, anniversaires ; réunion de deux familles | Terminée |
 | 5. Mémoire | Récits audio, transcriptions, traductions, albums | À venir |
 | 6. Intégrations | WhatsApp, Mobile Money, carte de la diaspora, rattachement | À venir |

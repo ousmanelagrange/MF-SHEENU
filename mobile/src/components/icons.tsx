@@ -43,3 +43,10 @@ export const WalletIcon = ({ color, size = 22 }: P) => (
     <Path d="M6 6l9-3 1.5 3" />
   </Svg>
 );
+
+export const FeedIcon = ({ color, size = 22 }: P) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8}>
+    <Path d="M4 6.5A2.5 2.5 0 016.5 4h11A2.5 2.5 0 0120 6.5v8a2.5 2.5 0 01-2.5 2.5H10l-4.5 3.5V17A2.5 2.5 0 014 14.5z" />
+    <Path d="M8 9h8M8 12.5h5" />
+  </Svg>
+);

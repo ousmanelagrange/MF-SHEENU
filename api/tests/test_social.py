@@ -90,6 +90,9 @@ def test_moderation(client, api):
     assert other.get("/feed").json()["items"] == []  # masquée pour les membres
     assert api.get("/feed").json()["items"][0]["hidden"] is True  # visible par la modération
     assert api.get("/reports").json() == []
+    # lecture d'une publication seule : introuvable pour un membre une fois masquée
+    assert other.get(f"/posts/{post['id']}").status_code == 404
+    assert api.get(f"/posts/{post['id']}").json()["text"] == "Message déplacé"
 
 
 def test_stories_expire(client, api):

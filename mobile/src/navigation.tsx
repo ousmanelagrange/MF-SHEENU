@@ -1,5 +1,6 @@
 // Navigation une fois connecté : choix de la famille, puis cinq onglets
-// (Personnes, Arbre, Cotisations, Propositions, Moi). Une fiche s'ouvre par-dessus les onglets.
+// (Fil, Personnes, Arbre, Cotisations, Moi). Fiches, publications, collectes et propositions
+// s'ouvrent par-dessus les onglets ; les propositions sont accessibles depuis « Moi ».
 
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { DefaultTheme, NavigationContainer, type NavigationProp } from "@react-navigation/native";
@@ -7,19 +8,28 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useEffect, useState } from "react";
 import { Platform, Pressable, ScrollView, Text } from "react-native";
 import { api, session } from "./api";
-import { CheckIcon, MeIcon, PeopleIcon, TreeIcon, WalletIcon } from "./components/icons";
+import { FeedIcon, MeIcon, PeopleIcon, TreeIcon, WalletIcon } from "./components/icons";
 import { s } from "./components/ui";
 import { ContributionsScreen } from "./screens/ContributionsScreen";
 import { EventScreen } from "./screens/EventScreen";
 import { FamiliesScreen } from "./screens/FamiliesScreen";
+import { FeedScreen } from "./screens/FeedScreen";
 import { PeopleScreen } from "./screens/PeopleScreen";
 import { PersonScreen } from "./screens/PersonScreen";
+import { PostScreen } from "./screens/PostScreen";
 import { ProposalsScreen } from "./screens/ProposalsScreen";
 import { TreeScreen } from "./screens/TreeScreen";
 import { colors, fonts } from "./theme";
 import { ROLE_LABELS, type MyFamily } from "./types";
 
-type RootRoutes = { Families: undefined; Main: undefined; Person: { id: string }; Event: { id: string } };
+type RootRoutes = {
+  Families: undefined;
+  Main: undefined;
+  Person: { id: string };
+  Event: { id: string };
+  Post: { id: string };
+  Proposals: undefined;
+};
 type Nav = NavigationProp<RootRoutes>;
 
 const Stack = createNativeStackNavigator<RootRoutes>();
@@ -66,6 +76,12 @@ export function AppNavigation({ onLogout }: { onLogout: () => void }) {
             <EventScreen id={route.params.id} meId={family?.person_id ?? null} onOpenPerson={(id) => navigation.push("Person", { id })} />
           )}
         </Stack.Screen>
+        <Stack.Screen name="Post" options={{ title: "Publication" }}>
+          {({ route }) => <PostScreen id={route.params.id} />}
+        </Stack.Screen>
+        <Stack.Screen name="Proposals" options={{ title: "Propositions" }}>
+          {() => <ProposalsScreen />}
+        </Stack.Screen>
         <Stack.Screen name="Person" options={{ title: "" }}>
           {({ route, navigation }) => (
             <PersonScreen id={route.params.id} meId={family?.person_id ?? null} onOpen={(id) => navigation.push("Person", { id })} />
@@ -90,7 +106,10 @@ function MainTabs({ family, toReview, nav, onLogout }: { family: MyFamily | null
         tabBarStyle: Platform.OS === "web" ? { height: 62, paddingBottom: 8 } : undefined,
       }}
     >
-      <Tabs.Screen name="Personnes" options={{ title: family?.name ?? "Personnes", tabBarLabel: "Personnes", tabBarIcon: PeopleIcon }}>
+      <Tabs.Screen name="Fil" options={{ title: family?.name ?? "Fil", tabBarLabel: "Fil", tabBarIcon: FeedIcon }}>
+        {() => <FeedScreen onOpenPost={(id) => nav.navigate("Post", { id })} />}
+      </Tabs.Screen>
+      <Tabs.Screen name="Personnes" options={{ tabBarIcon: PeopleIcon }}>
         {() => <PeopleScreen onOpen={open} />}
       </Tabs.Screen>
       <Tabs.Screen name="Arbre" options={{ tabBarIcon: TreeIcon }}>
@@ -100,18 +119,16 @@ function MainTabs({ family, toReview, nav, onLogout }: { family: MyFamily | null
         {() => <ContributionsScreen onOpen={(id) => nav.navigate("Event", { id })} />}
       </Tabs.Screen>
       <Tabs.Screen
-        name="Propositions"
-        options={{ tabBarIcon: CheckIcon, tabBarBadge: toReview > 0 ? toReview : undefined, tabBarBadgeStyle: { backgroundColor: colors.brass } }}
+        name="Moi"
+        options={{ tabBarIcon: MeIcon, tabBarBadge: toReview > 0 ? toReview : undefined, tabBarBadgeStyle: { backgroundColor: colors.brass } }}
       >
-        {() => <ProposalsScreen />}
-      </Tabs.Screen>
-      <Tabs.Screen name="Moi" options={{ tabBarIcon: MeIcon }}>
         {() => (
           <ScrollView style={{ backgroundColor: colors.cotton }}>
             <Text style={[s.lead, { padding: 20 }]}>
               {family?.name}, {ROLE_LABELS[family?.role ?? "member"]?.toLowerCase()}
             </Text>
             {family?.person_id && <MenuRow label="Ma fiche" onPress={() => open(family.person_id!)} />}
+            <MenuRow label="Propositions" count={toReview} onPress={() => nav.navigate("Proposals")} />
             <MenuRow
               label="Changer de famille"
               onPress={async () => {
@@ -127,10 +144,11 @@ function MainTabs({ family, toReview, nav, onLogout }: { family: MyFamily | null
   );
 }
 
-function MenuRow({ label, onPress }: { label: string; onPress: () => void }) {
+function MenuRow({ label, count, onPress }: { label: string; count?: number; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [s.row, pressed && { backgroundColor: colors.indigo50 }]}>
-      <Text style={[s.name, { fontFamily: fonts.uiMedium, fontSize: 16 }]}>{label}</Text>
+      <Text style={[s.name, { fontFamily: fonts.uiMedium, fontSize: 16, flex: 1 }]}>{label}</Text>
+      {!!count && <Text style={[s.meta, { color: colors.brass, fontFamily: fonts.uiSemi }]}>{count} à valider</Text>}
     </Pressable>
   );
 }

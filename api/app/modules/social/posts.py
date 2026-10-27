@@ -90,6 +90,15 @@ def create_post(body: PostIn, ctx: Ctx) -> PostOut:
     return service.posts_out(ctx, graph, [post])[0]
 
 
+@router.get("/posts/{post_id}", response_model=PostOut)
+def get_post(post_id: UUID, ctx: Ctx) -> PostOut:
+    """Une publication seule (ouverte depuis le mobile ou une notification)."""
+    post = service.get_post(ctx, post_id)
+    if post.hidden and not service.can_moderate(ctx):
+        raise not_found("Publication")
+    return service.posts_out(ctx, load_graph(ctx), [post])[0]
+
+
 @router.patch("/posts/{post_id}", response_model=PostOut)
 def update_post(post_id: UUID, body: PostUpdate, ctx: Ctx) -> PostOut:
     """L'auteur corrige son texte ; la modération épingle ou masque."""
