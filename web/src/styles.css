@@ -742,3 +742,69 @@ body {
   display: inline-block;
   text-align: center;
 }
+
+/* ---------- Cotisations ---------- */
+
+.collect__figures {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.collect__amount {
+  font-family: var(--font-names);
+  font-size: 22px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.collect__target {
+  color: var(--muted);
+  font-size: 14px;
+}
+.collect__bar {
+  height: 8px;
+  margin-top: 8px;
+  background: var(--indigo-100);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.collect__bar > div {
+  height: 100%;
+  background: var(--brass);
+  border-radius: 4px;
+}
+.collect__counts {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+.event-row {
+  display: grid;
+  grid-template-columns: 1fr 260px 90px;
+  gap: 24px;
+  align-items: center;
+  padding: 16px 4px;
+  color: inherit;
+}
+.event-row:hover {
+  background: var(--indigo-50);
+}
+.event-row .collect__amount {
+  font-size: 16px;
+}
+.payment-row {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 12px 4px;
+}
+@media (max-width: 720px) {
+  .event-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .payment-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

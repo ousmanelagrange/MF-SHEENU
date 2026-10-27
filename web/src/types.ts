@@ -164,3 +164,78 @@ export const ROLE_LABELS: Record<string, string> = {
   secretary: "Secrétaire",
   admin: "Administrateur",
 };
+
+// ---------- Cotisations ----------
+
+export type DueStatus = "paid" | "partial" | "unpaid" | "exempt";
+
+export interface Scale {
+  id: string;
+  name: string;
+  currency: string;
+  amounts_by_generation: Record<string, number>;
+  default_amount: number;
+  exempt_under_age: number | null;
+  include_spouses: boolean;
+  active: boolean;
+}
+
+export interface Totals {
+  due: number;
+  collected: number;
+  pending: number;
+  persons_due: number;
+  paid: number;
+  partial: number;
+  unpaid: number;
+  exempt: number;
+}
+
+export interface ContributionEvent {
+  id: string;
+  title: string;
+  kind: "mourning" | "wedding" | "birth" | "project" | "annual" | "other";
+  description: string | null;
+  currency: string;
+  deadline: string | null;
+  target_amount: number | null;
+  concerned_person_id: string | null;
+  status: "open" | "closed";
+  created_at: string;
+  closed_at: string | null;
+  totals: Totals;
+  can_manage: boolean;
+}
+
+export interface DueRow {
+  due_id: string | null;
+  person: PersonSummary;
+  amount: number;
+  paid: number;
+  status: DueStatus;
+  exempt: boolean;
+  note: string | null;
+}
+
+export interface Payment {
+  id: string;
+  event_id: string;
+  person: PersonSummary | null;
+  amount: number;
+  method: "mobile_money" | "cash" | "bank" | "other";
+  reference: string | null;
+  proof_url: string | null;
+  original_amount: number | null;
+  original_currency: string | null;
+  status: "declared" | "validated" | "rejected";
+  declared_by_name: string | null;
+  review_note: string | null;
+  created_at: string;
+}
+
+export interface PersonContribution {
+  event: ContributionEvent;
+  amount: number;
+  paid: number;
+  status: DueStatus;
+}

@@ -20,6 +20,9 @@ import { KinshipPage } from "./features/kinship/KinshipPage";
 import { PersonFormPage } from "./features/persons/PersonFormPage";
 import { PersonPage } from "./features/persons/PersonPage";
 import { PersonsPage } from "./features/persons/PersonsPage";
+import { ContributionsPage } from "./features/contributions/ContributionsPage";
+import { EventPage } from "./features/contributions/EventPage";
+import { ScalesPage } from "./features/contributions/ScalesPage";
 import { DataPage } from "./features/data/DataPage";
 import { ProposalsPage } from "./features/proposals/ProposalsPage";
 import { TreePage } from "./features/tree/TreePage";
@@ -73,6 +76,9 @@ export default function App() {
                     <Route path="/journal" element={<AuditPage />} />
                     <Route path="/propositions" element={<ProposalsPage />} />
                     <Route path="/donnees" element={<DataPage />} />
+                    <Route path="/cotisations" element={<ContributionsPage />} />
+                    <Route path="/cotisations/baremes" element={<ScalesPage />} />
+                    <Route path="/cotisations/:id" element={<EventPage />} />
                   </Route>
                 </Route>
                 <Route path="*" element={<Navigate to="/" replace />} />

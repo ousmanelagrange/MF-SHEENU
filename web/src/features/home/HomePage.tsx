@@ -8,6 +8,7 @@ import { PageHead } from "../../components/AppShell";
 import { PersonLine } from "../../components/Person";
 import { useFamily } from "../../lib/family";
 import type { PersonDetail, Stats } from "../../types";
+import { ContributionHistory } from "../contributions/components/ContributionHistory";
 
 export function HomePage() {
   const { family } = useFamily();
@@ -94,6 +95,11 @@ export function HomePage() {
             </ul>
           ) : (
             <p className="empty-note">Votre compte n'est pas relié à une fiche.</p>
+          )}
+          {family.person_id && (
+            <div style={{ marginTop: 32 }}>
+              <ContributionHistory personId={family.person_id} title="Mes cotisations en cours" onlyOpen />
+            </div>
           )}
         </section>
 

@@ -13,6 +13,7 @@ import { DelegatesSection } from "./components/DelegatesSection";
 import { GrantTitleModal } from "./components/GrantTitleModal";
 import { KinGroup, KinItem } from "./components/KinList";
 import { ProfileAside } from "./components/ProfileAside";
+import { ContributionHistory } from "../contributions/components/ContributionHistory";
 
 const LINK_KIND: Record<string, string> = { biological: "", adoptive: "adoptif", recognized: "reconnu" };
 const UNION_KIND: Record<string, string> = { customary: "coutumière", civil: "civile", religious: "religieuse" };
@@ -181,6 +182,8 @@ export function PersonPage() {
               ))}
             </KinGroup>
           )}
+
+          <ContributionHistory personId={p.id} />
 
           {canManage && !p.has_account && p.can_edit && <DelegatesSection personId={p.id} />}
 

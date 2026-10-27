@@ -11,6 +11,7 @@ import {
   NodeIndexOutlined,
   TeamOutlined,
   UserAddOutlined,
+  WalletOutlined,
 } from "@ant-design/icons";
 import { useGetIdentity, useLogout } from "@refinedev/core";
 import { Button, Menu, Spin } from "antd";
@@ -45,6 +46,7 @@ export function AppShell() {
     { key: "/arbre", icon: <ApartmentOutlined />, label: "Arbre" },
     { key: "/personnes", icon: <TeamOutlined />, label: "Personnes" },
     { key: "/parente", icon: <NodeIndexOutlined />, label: "Lien de parenté" },
+    { key: "/cotisations", icon: <WalletOutlined />, label: "Cotisations" },
     {
       key: "/propositions",
       icon: <CheckSquareOutlined />,
