@@ -6,7 +6,7 @@ Plateforme privée de mémoire et d'organisation des grandes familles africaines
 
 | Dossier | Contenu |
 |---|---|
-| [`docs/`](docs) | [Analyse](docs/01-analyse.md), [conception globale](docs/02-conception-globale.md), [conception détaillée](docs/03-conception-detaillee.md), [déploiement](docs/04-deploiement.md) |
+| [`docs/`](docs) | [Analyse](docs/01-analyse.md), [conception globale](docs/02-conception-globale.md), [conception détaillée](docs/03-conception-detaillee.md), [déploiement](docs/04-deploiement.md), [guide du code](docs/05-guide-du-code.md) |
 | [`api/`](api) | API FastAPI + PostgreSQL |
 | [`web/`](web) | Application web React + Refine |
 | [`mobile/`](mobile) | Application mobile Expo |
@@ -37,6 +37,13 @@ npm install
 npm run dev                     # http://localhost:5173
 ```
 
-## Phase en cours
+## Avancement
 
-Phase 1 — le cœur : comptes, familles, invitations, personnes, filiations, unions, arbre, calcul de lien, titres, export PNG / PDF / SVG / GEDCOM.
+| Phase | Contenu | État |
+|---|---|---|
+| 1. Cœur | Comptes, familles, invitations, personnes, liens, arbre, parenté, titres, exports | Terminée |
+| 2. Gouvernance | Propositions et validation, délégation, import GEDCOM, doublons et fusion, arbre mobile | Terminée |
+| 3. Cotisations | Règles, événements, déclarations, validation, tableau transparent | À venir |
+| 4. Vie sociale | Fil, stories, annonces, mémoriaux, anniversaires | À venir |
+| 5. Mémoire | Récits audio, transcriptions, traductions, albums | À venir |
+| 6. Intégrations | WhatsApp, Mobile Money, carte de la diaspora, rattachement | À venir |

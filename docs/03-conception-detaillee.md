@@ -1,6 +1,6 @@
-# 03 — Conception détaillée (phase 1)
+# 03 — Conception détaillée (phases 1 et 2)
 
-> Version 1.0 — 27 octobre 2026. Ce document décrit précisément ce qui est implémenté dans la phase 1. Les phases suivantes ajouteront leurs sections.
+> Version 1.1 — 27 octobre 2026. Sections 1 à 7 : phase 1 (le cœur). Section 8 : phase 2 (la gouvernance). L'organisation du code est décrite dans [05-guide-du-code.md](05-guide-du-code.md).
 
 ## 1. Modèle physique de données
 
@@ -257,17 +257,18 @@ Le calcul se fait en mémoire sur l'arbre chargé (parcours en largeur), ce qui 
 
 Clé de tri : (rang du titre actif le plus élevé, ou +∞ sans titre) → génération → année de naissance → nom. Le nom affiché est `abréviation du titre + prénom + nom` (exemple : « Nji Ibrahim Mfochivé »).
 
-### 2.6 Périmètre d'écriture (phase 1)
+### 2.6 Périmètre d'écriture
 
-En attendant le circuit de propositions (phase 2), un utilisateur peut créer ou modifier directement :
+Un utilisateur peut créer ou modifier directement :
 
 | Rôle | Périmètre |
 |---|---|
 | `admin` | toute la famille |
 | `branch_head` | sa personne de branche, ses descendants et leurs conjoints |
 | autres rôles | sa propre fiche, ses descendants et leurs conjoints |
+| tous | en plus, les personnes qui lui sont **déléguées** et leur descendance (§8.3) |
 
-Hors périmètre : `403 out_of_scope`. La phase 2 transformera ce refus en proposition.
+Hors périmètre, la route directe répond `403 out_of_scope` ; le client propose alors d'envoyer une **proposition** (§8.2).
 
 ### 2.7 Export GEDCOM 5.5.1
 
@@ -393,9 +394,9 @@ Base : `/api/v1`. Authentification : `Authorization: Bearer <access_token>`. Con
 
 État d'authentification dans `localStorage` (jetons, famille courante). Un fournisseur de données Refine maison traduit les appels de Refine vers l'API (`{items, total}`, en-tête `X-Family-Id`), et un fournisseur d'authentification gère connexion, rafraîchissement et déconnexion.
 
-## 5. Application mobile (phase 1)
+## 5. Application mobile
 
-Écrans : connexion, choix de famille, liste des membres (recherche, préséance), fiche personne avec parents, conjoints et enfants navigables, calcul de lien avec soi-même. L'arbre graphique mobile arrive en phase 2 ; d'ici là, la navigation de fiche en fiche couvre le besoin.
+Connexion, choix de la famille, puis quatre onglets : **Personnes** (liste par préséance, recherche), **Arbre** (descendance ou ascendance, profondeur et zoom réglables), **Propositions** (valider ou refuser ; suivre les siennes), **Moi**. La fiche s'ouvre par-dessus les onglets.
 
 ## 6. Tests
 
@@ -421,3 +422,124 @@ Un script `seed_demo.py` crée une famille de démonstration sur 6 générations
 | `STORAGE_BACKEND` | `local` ou `s3` | Stockage des photos |
 | `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_PUBLIC_URL` | | Cloudflare R2 |
 | `MAX_FAMILIES_PER_USER` | `2` | RG-03 |
+
+
+## 8. Phase 2 — Gouvernance
+
+### 8.1 Nouvelles tables
+
+```mermaid
+erDiagram
+  family ||--o{ proposal : "reçoit"
+  app_user ||--o{ proposal : "propose / valide"
+  person ||--o{ delegation : "est confiée"
+  membership ||--o{ delegation : "gère"
+
+  proposal {
+    uuid id PK
+    uuid family_id FK
+    uuid author_id FK
+    varchar kind
+    jsonb payload
+    jsonb anchor_ids
+    varchar summary
+    text message
+    varchar status
+    uuid reviewer_id FK
+    text review_note
+    uuid result_id
+    timestamptz created_at
+    timestamptz reviewed_at
+  }
+  delegation {
+    uuid id PK
+    uuid family_id FK
+    uuid person_id FK
+    uuid membership_id FK
+    uuid created_by FK
+    timestamptz created_at
+  }
+```
+
+Les deux tables sont soumises à la même Row Level Security que les autres (migration `0002`).
+
+### 8.2 Propositions (RG-13, RG-14)
+
+| Type (`kind`) | `payload` | Personnes concernées (`anchor_ids`) |
+|---|---|---|
+| `create_person` | corps de `POST /persons` (avec `parent_ids`, `child_ids`, `spouse_id`) | parents, enfants, conjoint |
+| `update_person` | `{person_id, changes}` (champs modifiés seulement) | la personne |
+| `archive_person` | `{person_id}` | la personne |
+| `add_parent_child` | corps de `POST /relations/parent-child` | parent et enfant |
+| `add_union` | corps de `POST /unions` | les deux conjoints |
+| `delete_parent_child` | `{link_id}` | parent et enfant du lien |
+| `delete_union` | `{union_id}` | les deux conjoints |
+
+**Règles**
+- Les données sont validées **à la création** avec le schéma du type ; une phrase lisible (`summary`) est figée à ce moment.
+- **Qui valide** : l'administrateur, toujours ; un chef de branche si au moins une personne concernée est dans son périmètre, et jamais sa propre proposition.
+- **Accepter** exécute la même fonction de service que la route directe : mêmes contrôles (boucles, deux parents biologiques…), même audit. Si l'opération n'est plus possible, l'erreur est renvoyée et la proposition reste en attente.
+- **Refuser** exige un motif, visible par l'auteur. L'auteur peut **retirer** sa proposition tant qu'elle est en attente.
+
+```mermaid
+sequenceDiagram
+  actor M as Membre
+  participant A as API
+  actor CB as Chef de branche
+  M->>A: POST /persons (hors périmètre)
+  A-->>M: 403 out_of_scope
+  M->>A: POST /proposals {kind: create_person, payload, message}
+  A-->>M: 201 « Ajouter X comme enfant de Y »
+  CB->>A: GET /proposals/counts → {to_review: 1}
+  CB->>A: POST /proposals/{id}/accept
+  A->>A: persons.service.create_person (mêmes contrôles)
+  A-->>CB: accepted, result_id
+```
+
+### 8.3 Délégation
+
+Le bureau, ou un chef de branche pour sa branche, confie la fiche d'une personne (souvent un ancien sans smartphone) à un membre. Le délégué peut ensuite modifier cette fiche et sa descendance comme s'il s'agissait de la sienne (§2.6).
+
+### 8.4 Import GEDCOM
+
+- Lecture ligne à ligne (`niveau [@réf@] ÉTIQUETTE [valeur]`) ; on retient `NAME`, `SEX`, `BIRT/DATE/PLAC`, `DEAT/DATE/PLAC`, `NICK`, `NOTE` (avec `CONT`/`CONC`), et pour `FAM` : `HUSB`, `WIFE`, `CHIL`, `MARR/DATE`, `DIV`.
+- Dates : « 12 MAR 1950 » devient une date ; « ABT 1950 » ou « 1950 », une année seule.
+- L'import **ajoute** à l'arbre existant ; il ne fusionne rien automatiquement. Fichier de 10 Mo au plus, réservé à l'administrateur.
+
+### 8.5 Doublons et fusion
+
+**Détection** — deux fiches sont signalées si :
+1. prénom et nom identiques, sans tenir compte des accents ni de la casse ;
+2. années de naissance à 2 ans près, ou inconnues ;
+3. aucune filiation ni union entre elles ;
+4. leurs parents ne sont pas **tous différents** quand ils sont connus des deux côtés. Cette règle écarte les homonymes, très fréquents (enfant nommé d'après un aïeul).
+
+**Fusion** de `other` dans `keep` (administrateur) : filiations, unions, titres, délégations et compte éventuel passent sur `keep` (doublons et auto-liens supprimés) ; les champs vides de `keep` sont complétés ; la racine est reportée si besoin ; `other` est archivée. Refusée si l'une est l'ascendante de l'autre, ou si les deux ont un compte.
+
+### 8.6 Nouveaux points d'entrée
+
+| Méthode | Chemin | Rôle | Description |
+|---|---|---|---|
+| POST | `/proposals` | membre | Proposer une opération |
+| GET | `/proposals?view=review\|mine\|all&status=` | membre | À valider, les miennes, toutes (bureau) |
+| GET | `/proposals/counts` | membre | `{to_review, mine_pending}` pour le menu |
+| POST | `/proposals/{id}/accept` | valideur | Appliquer |
+| POST | `/proposals/{id}/reject` | valideur | Refuser avec motif |
+| POST | `/proposals/{id}/withdraw` | auteur | Retirer |
+| GET / POST | `/persons/{id}/delegates` | membre / bureau, chef de branche | Délégués d'une fiche |
+| DELETE | `/delegations/{id}` | bureau, chef de branche | Retirer une délégation |
+| POST | `/import/gedcom` | admin | Importer un fichier `.ged` |
+| GET | `/duplicates` | admin | Paires de doublons possibles |
+| POST | `/persons/{id}/merge` | admin | Fusionner `{other_id}` dans cette fiche |
+
+`POST /persons` accepte aussi `child_ids` : créer directement un **ascendant** d'enfants existants.
+
+### 8.7 Écrans
+
+| Plateforme | Écran | Contenu |
+|---|---|---|
+| Web | Formulaires, ajout de proche | Hors périmètre : « Envoyer une proposition », avec message facultatif |
+| Web | `/propositions` | À valider (Accepter, Refuser avec motif) ; Mes propositions (statut, motif) ; compteur dans le menu |
+| Web | Fiche | « Fiche gérée par » pour confier la fiche d'un ancien |
+| Web | `/donnees` | Export et import GEDCOM, doublons avec « Garder celle-ci » |
+| Mobile | Onglets | Arbre graphique, propositions à valider avec badge |
