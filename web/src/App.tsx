@@ -16,6 +16,7 @@ import { LoginPage, RegisterPage } from "./features/auth/AuthPages";
 import { FamiliesPage } from "./features/families/FamiliesPage";
 import { HomePage } from "./features/home/HomePage";
 import { JoinPage } from "./features/auth/JoinPage";
+import { JoinRequestPage } from "./features/join/JoinRequestPage";
 import { KinshipPage } from "./features/kinship/KinshipPage";
 import { PersonFormPage } from "./features/persons/PersonFormPage";
 import { PersonPage } from "./features/persons/PersonPage";
@@ -31,6 +32,7 @@ import { AlbumsPage } from "./features/memory/AlbumsPage";
 import { NarrativePage } from "./features/memory/NarrativePage";
 import { NarrativesPage } from "./features/memory/NarrativesPage";
 import { TimelinePage } from "./features/memory/TimelinePage";
+import { DiasporaPage } from "./features/diaspora/DiasporaPage";
 import { FeedPage } from "./features/social/FeedPage";
 import { ModerationPage } from "./features/social/ModerationPage";
 import { TreePage } from "./features/tree/TreePage";
@@ -63,6 +65,7 @@ export default function App() {
                 <Route path="/connexion" element={<LoginPage />} />
                 <Route path="/inscription" element={<RegisterPage />} />
                 <Route path="/rejoindre/:token" element={<JoinPage />} />
+                <Route path="/rattachement/:token" element={<JoinRequestPage />} />
                 <Route
                   element={
                     <Authenticated key="private" fallback={<Navigate to="/connexion" replace />}>
@@ -81,6 +84,7 @@ export default function App() {
                     <Route path="/memoire/albums" element={<AlbumsPage />} />
                     <Route path="/memoire/albums/:id" element={<AlbumPage />} />
                     <Route path="/memoire/frise" element={<TimelinePage />} />
+                    <Route path="/diaspora" element={<DiasporaPage />} />
                     <Route path="/arbre" element={<TreePage />} />
                     <Route path="/personnes" element={<PersonsPage />} />
                     <Route path="/personnes/nouvelle" element={<PersonFormPage />} />

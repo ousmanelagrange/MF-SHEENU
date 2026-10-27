@@ -6,19 +6,19 @@ export function ShareInviteModal({
   title,
   shareText,
   onClose,
+  note = "Ce lien est personnel, valable 7 jours et utilisable une seule fois.",
 }: {
   title: string;
   shareText: string | null;
   onClose: () => void;
+  note?: string;
 }) {
   const { message } = App.useApp();
   return (
     <Modal open={!!shareText} onCancel={onClose} footer={null} title={title}>
       {shareText && (
         <>
-          <p style={{ color: "var(--muted)", marginTop: 0 }}>
-            Ce lien est personnel, valable 7 jours et utilisable une seule fois.
-          </p>
+          <p style={{ color: "var(--muted)", marginTop: 0 }}>{note}</p>
           <Input.TextArea value={shareText} autoSize readOnly />
           <Space style={{ marginTop: 16 }} wrap>
             <Button

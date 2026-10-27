@@ -7,6 +7,8 @@ import { PersonPicker } from "../../components/Person";
 import { ShareInviteModal } from "../../components/ShareInviteModal";
 import { api } from "../../lib/api";
 import { useFamily } from "../../lib/family";
+import { JoinLinkSection } from "../join/JoinLinkSection";
+import { JoinRequestsSection } from "../join/JoinRequestsSection";
 import { ROLE_LABELS, type Invitation, type Member } from "../../types";
 
 
@@ -51,13 +53,14 @@ export function MembersPage() {
     <div className="page">
       <PageHead
         title="Membres et invitations"
-        lead="On rejoint la famille uniquement sur invitation. Chaque lien est personnel, valable 7 jours, à usage unique."
+        lead="On rejoint la famille sur invitation personnelle (valable 7 jours, à usage unique) ou par le lien de rattachement, après relecture de la demande."
         actions={
           <Button type="primary" onClick={() => setOpen(true)}>
             Inviter quelqu'un
           </Button>
         }
       />
+      <JoinRequestsSection />
       <Table
         rowKey="id"
         dataSource={members}
@@ -109,6 +112,8 @@ export function MembersPage() {
           },
         ]}
       />
+
+      {isAdmin && <JoinLinkSection />}
 
       <h2 className="page__title" style={{ fontSize: 22, margin: "48px 0 16px" }}>
         Invitations en attente

@@ -4,6 +4,7 @@ import {
   ApartmentOutlined,
   AuditOutlined,
   BookOutlined,
+  GlobalOutlined,
   CheckSquareOutlined,
   DatabaseOutlined,
   CrownOutlined,
@@ -20,6 +21,7 @@ import { useGetIdentity, useLogout } from "@refinedev/core";
 import { Button, Menu, Spin } from "antd";
 import { useState } from "react";
 import { Navigate, Outlet, useLocation, useNavigate } from "react-router";
+import { NotificationsBell } from "../features/notifications/NotificationsBell";
 import { useFamily } from "../lib/family";
 import { ROLE_LABELS } from "../types";
 import { useProposalCounts } from "../features/proposals/useProposalCounts";
@@ -51,6 +53,7 @@ export function AppShell() {
     { key: "/personnes", icon: <TeamOutlined />, label: "Personnes" },
     { key: "/parente", icon: <NodeIndexOutlined />, label: "Lien de parenté" },
     { key: "/memoire", icon: <BookOutlined />, label: "Mémoire" },
+    { key: "/diaspora", icon: <GlobalOutlined />, label: "Diaspora" },
     { key: "/cotisations", icon: <WalletOutlined />, label: "Cotisations" },
     {
       key: "/propositions",
@@ -88,6 +91,7 @@ export function AppShell() {
         <NtienyaBand height={10} />
         <div className="rail__brand">
           <Wordmark inverted />
+          <NotificationsBell tone="dark" />
         </div>
         <button
           className="rail__family"
@@ -118,6 +122,8 @@ export function AppShell() {
       <div className="main">
         <div className="topbar-mobile">
           <Wordmark />
+          <span style={{ flex: 1 }} />
+          <NotificationsBell tone="light" />
           <Button icon={<MenuOutlined />} onClick={() => setOpen(!open)} aria-label="Menu" />
         </div>
         <Outlet />

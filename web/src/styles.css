@@ -76,7 +76,10 @@ body {
   color: #fff;
 }
 .rail__brand {
-  padding: 20px 20px 18px;
+  padding: 20px 14px 18px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 .rail__family {
   margin: 4px 12px 12px;
@@ -1600,4 +1603,262 @@ textarea.reading-input {
 .reading del + ins,
 .reading ins + del {
   margin-left: 3px;
+}
+
+/* ---------- Notifications (phase 6) ---------- */
+
+.bell {
+  border: 0;
+  background: none;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-size: 18px;
+  line-height: 1;
+}
+.bell--dark,
+.bell--dark .anticon {
+  color: rgba(255, 255, 255, 0.82);
+}
+.bell--dark:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.bell--light,
+.bell--light .anticon {
+  color: var(--indigo-700);
+}
+.notif {
+  width: min(380px, 86vw);
+}
+.notif__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 4px 8px;
+  border-bottom: 1px solid var(--line);
+}
+.notif ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+.notif__item {
+  display: grid;
+  gap: 2px;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  padding: 10px 8px 10px 16px;
+  cursor: pointer;
+  position: relative;
+  font: inherit;
+}
+.notif__item:hover {
+  background: var(--indigo-50);
+}
+.notif__item.is-unread::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 16px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--brass);
+}
+.notif__title {
+  font-weight: 500;
+  color: var(--indigo-900);
+}
+.notif__item:not(.is-unread) .notif__title {
+  font-weight: 400;
+  color: var(--muted);
+}
+.notif__body {
+  font-size: 13px;
+  color: var(--muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.notif__when {
+  font-size: 12px;
+  color: var(--indigo-300);
+}
+
+/* ---------- Rattachement, rappels, résumé, diaspora (phase 6) ---------- */
+
+.join-link {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-top: 48px;
+  padding: 20px 24px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+.join-link h2 {
+  margin: 0 0 4px;
+  font-size: 17px;
+  font-weight: 600;
+}
+.join-link p {
+  margin: 0;
+  color: var(--muted);
+  max-width: 62ch;
+  line-height: 1.5;
+}
+.join-requests {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+}
+.join-requests li {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 16px 4px;
+  border-bottom: 1px solid var(--line);
+}
+.join-requests__actions {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.join-requests blockquote,
+blockquote.modal-note {
+  margin: 8px 0;
+  padding: 2px 0 2px 14px;
+  border-left: 3px solid var(--brass);
+  font-family: var(--font-names);
+  font-size: 15.5px;
+  line-height: 1.55;
+  color: var(--indigo-900);
+}
+
+.reminders {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 55vh;
+  overflow-y: auto;
+  border-top: 1px solid var(--line);
+}
+.reminders li {
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 2px;
+  border-bottom: 1px solid var(--line);
+}
+
+.digest__text {
+  white-space: pre-wrap;
+  line-height: 1.6;
+  font-size: 14.5px;
+  padding: 14px 16px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+.diaspora-map {
+  width: 100%;
+  height: auto;
+  display: block;
+  margin-bottom: 28px;
+}
+.diaspora-map__sea {
+  fill: var(--indigo-50);
+}
+.diaspora-map__land {
+  fill: #e1e5ef;
+  stroke: #fff;
+  stroke-width: 0.5;
+}
+.diaspora-map__dot {
+  cursor: pointer;
+}
+.diaspora-map__dot circle {
+  fill: rgb(156 116 40 / 0.78);
+  stroke: #fff;
+  stroke-width: 1.5;
+}
+.diaspora-map__dot:hover circle,
+.diaspora-map__dot.is-selected circle {
+  fill: var(--indigo-700);
+}
+.diaspora-map__dot text {
+  fill: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  pointer-events: none;
+}
+.diaspora {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 48px;
+}
+.diaspora__ranking {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.diaspora__ranking button {
+  display: grid;
+  grid-template-columns: 150px 1fr 48px;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  padding: 7px 6px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.diaspora__ranking button:hover,
+.diaspora__ranking button.is-selected {
+  background: var(--indigo-50);
+}
+.diaspora__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.diaspora__bar {
+  height: 8px;
+  min-width: 3px;
+  border-radius: 2px;
+  background: var(--brass);
+}
+.diaspora__count {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+@media (max-width: 760px) {
+  .diaspora {
+    grid-template-columns: 1fr;
+  }
+  .join-requests li {
+    flex-direction: column;
+  }
+  .reminders li {
+    grid-template-columns: 1fr auto;
+  }
 }

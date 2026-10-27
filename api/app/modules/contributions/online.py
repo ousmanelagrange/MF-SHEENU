@@ -118,6 +118,7 @@ def send_reminders(event_id: UUID, body: ReminderIn, ctx: Ctx) -> RemindersOut:
                 link=delivery.link,
             )
         )
+    items.sort(key=lambda i: i.status == "no_phone")  # les personnes joignables d'abord
     audit.record(ctx, "remind", "contribution_event", event.id, after={"count": len(items)})
     ctx.db.commit()
     return RemindersOut(backend=messenger.name, items=items)

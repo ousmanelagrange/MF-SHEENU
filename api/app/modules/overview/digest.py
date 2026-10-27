@@ -46,9 +46,12 @@ def digest_text(ctx: FamilyContext, graph: FamilyGraph, days: int = 7) -> str:
         if p.id in graph.persons
     ]
     if newcomers:
-        names = ", ".join(graph.display_name(p.id) for p in newcomers[:6])
-        more = f" et {len(newcomers) - 6} autres" if len(newcomers) > 6 else ""
-        lines += ["", f"*Arbre* : {len(newcomers)} nouvelle(s) personne(s), {names}{more}."]
+        # Après un import, des centaines de fiches arrivent d'un coup : on ne cite alors personne
+        if len(newcomers) <= 12:
+            names = ", ".join(graph.display_name(p.id) for p in newcomers)
+            lines += ["", f"*Arbre* : {len(newcomers)} nouvelle(s) personne(s), {names}."]
+        else:
+            lines += ["", f"*Arbre* : {len(newcomers)} personnes ajoutées."]
 
     posts = list(
         db.scalars(
@@ -79,11 +82,15 @@ def digest_text(ctx: FamilyContext, graph: FamilyGraph, days: int = 7) -> str:
         lines += ["", "*Collectes en cours*"]
         for e in events:
             t = contributions.totals(ctx, e)
-            share = f" ({round(100 * t.collected / t.due)} %)" if t.due else ""
             deadline = f", jusqu'au {day(e.deadline)}" if e.deadline else ""
-            lines.append(
-                f"- {e.title} : {money(t.collected, e.currency)} sur {money(t.due, e.currency)}{share}{deadline}"
-            )
+            if t.due:
+                share = round(100 * t.collected / t.due)
+                progress = (
+                    f"{money(t.collected, e.currency)} sur {money(t.due, e.currency)} ({share} %)"
+                )
+            else:  # collecte libre, sans montant dû
+                progress = f"{money(t.collected, e.currency)} collectés"
+            lines.append(f"- {e.title} : {progress}{deadline}")
 
     narratives = list(
         db.scalars(

@@ -10,6 +10,7 @@ import { useFamily } from "../../lib/family";
 import type { PersonDetail, Stats } from "../../types";
 import { ContributionHistory } from "../contributions/components/ContributionHistory";
 import { Birthdays } from "../social/components/Birthdays";
+import { WeeklyDigest } from "./WeeklyDigest";
 
 export function HomePage() {
   const { family } = useFamily();
@@ -105,7 +106,10 @@ export function HomePage() {
         </section>
 
         <section className="kin-group">
-          <Birthdays days={14} />
+          <WeeklyDigest />
+          <div style={{ marginTop: 32 }}>
+            <Birthdays days={14} />
+          </div>
           <h2 style={{ marginTop: 32 }}>Personnes par génération</h2>
           <div className="gen-bars">
             {gens.map(([g, n]) => (

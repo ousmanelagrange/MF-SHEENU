@@ -13,7 +13,9 @@ import { DueEditModal } from "./components/DueEditModal";
 import { PaymentModal } from "./components/PaymentModal";
 import { PaymentsList } from "./components/PaymentsList";
 import { Progress } from "./components/Progress";
+import { PayOnlineModal } from "./components/PayOnlineModal";
 import { RecapModal } from "./components/RecapModal";
+import { RemindersModal } from "./components/RemindersModal";
 import { KIND_LABELS, STATUS_COLORS, STATUS_LABELS, money } from "./format";
 
 type Filter = DueStatus | "any";
@@ -28,6 +30,10 @@ export function EventPage() {
   const [filter, setFilter] = useState<Filter>("any");
   const [q, setQ] = useState("");
   const [paying, setPaying] = useState<{ personId?: string } | null>(null);
+  const [reminding, setReminding] = useState(false);
+  const [payingOnline, setPayingOnline] = useState(false);
+  const [online, setOnline] = useState(false);
+  useEffect(() => void api<{ enabled: boolean }>("/contributions/online").then((o) => setOnline(o.enabled)), []);
   const [recap, setRecap] = useState(false);
   const [editing, setEditing] = useState<DueRow | null>(null);
 
@@ -79,6 +85,8 @@ export function EventPage() {
                 Déclarer un paiement
               </Button>
             )}
+            {open && online && <Button onClick={() => setPayingOnline(true)}>Payer par Mobile Money</Button>}
+            {open && event.can_manage && <Button onClick={() => setReminding(true)}>Relancer</Button>}
             <Button onClick={() => setRecap(true)}>Récapitulatif WhatsApp</Button>
             <Button onClick={exportCsv}>Exporter pour Excel</Button>
             {event.can_manage && open && (
@@ -180,6 +188,8 @@ export function EventPage() {
         onDone={load}
       />
       <RecapModal eventId={event.id} open={recap} onClose={() => setRecap(false)} />
+      <RemindersModal eventId={event.id} open={reminding} onClose={() => setReminding(false)} />
+      <PayOnlineModal event={event} open={payingOnline} onClose={() => setPayingOnline(false)} onDone={load} />
       <DueEditModal row={editing} onClose={() => setEditing(null)} onDone={load} />
     </div>
   );

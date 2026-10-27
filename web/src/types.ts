@@ -367,3 +367,22 @@ export interface TimelineItem {
   person: PersonSummary | null;
   ref_id: string | null;
 }
+
+// ---------- Intégrations (phase 6) ----------
+
+export interface JoinRequest {
+  id: string;
+  first_name: string;
+  last_name: string | null;
+  sex: "M" | "F" | "U";
+  birth_year: number | null;
+  lineage: string;
+  village: string | null;
+  country: string | null;
+  phone: string | null;
+  account_name: string;
+  status: "pending" | "accepted" | "rejected";
+  person: PersonSummary | null;
+  review_note: string | null;
+  created_at: string;
+}
