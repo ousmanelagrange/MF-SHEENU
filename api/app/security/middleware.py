@@ -13,8 +13,8 @@ des fichiers audio.
 """
 
 import hashlib
-import logging
 import json
+import logging
 import threading
 import time
 import uuid
