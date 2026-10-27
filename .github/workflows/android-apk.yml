@@ -1,0 +1,94 @@
+# Construit l'APK Android installable de Sheenu, sans compte Expo.
+#
+# Lancement : onglet Actions → « APK Android » → Run workflow (adresse de l'API en paramètre),
+# ou automatiquement à chaque étiquette v* (ex. v1.0.0). L'APK est publié en artefact du run
+# et, pour une étiquette, joint à la Release GitHub.
+#
+# Signature : si les secrets ANDROID_KEYSTORE_BASE64, ANDROID_KEYSTORE_PASSWORD, ANDROID_KEY_ALIAS
+# et ANDROID_KEY_PASSWORD existent, l'APK est signé avec cette clé (indispensable pour publier
+# des mises à jour). Sinon il est signé avec la clé de test d'Android : installable, mais une
+# version signée autrement ne pourra pas le remplacer sans désinstallation.
+
+name: APK Android
+
+on:
+  workflow_dispatch:
+    inputs:
+      api_url:
+        description: "Adresse publique de l'API"
+        required: true
+        default: "https://sheenu-api.onrender.com"
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    defaults:
+      run:
+        working-directory: mobile
+    env:
+      EXPO_PUBLIC_API_URL: ${{ inputs.api_url || vars.SHEENU_API_URL || 'https://sheenu-api.onrender.com' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - run: npm ci
+
+      # Génère le projet natif android/ à partir de app.json (non versionné)
+      - run: npx expo prebuild --platform android --no-install
+
+      - name: Clé de signature (facultative)
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE" ]; then echo "Pas de clé : signature de test."; exit 0; fi
+          echo "$KEYSTORE" | base64 -d > android/app/sheenu.keystore
+          cat >> android/gradle.properties <<EOF
+          SHEENU_STORE_FILE=sheenu.keystore
+          SHEENU_STORE_PASSWORD=$STORE_PASSWORD
+          SHEENU_KEY_ALIAS=$KEY_ALIAS
+          SHEENU_KEY_PASSWORD=$KEY_PASSWORD
+          EOF
+          node ../.github/scripts/release-signing.js android/app/build.gradle
+
+      - name: Compilation
+        working-directory: mobile/android
+        run: ./gradlew assembleRelease --no-daemon -PreactNativeArchitectures=arm64-v8a,armeabi-v7a
+
+      - name: Nom du fichier
+        id: name
+        run: |
+          VERSION=$(node -p "require('./app.json').expo.version")
+          echo "file=sheenu-$VERSION.apk" >> "$GITHUB_OUTPUT"
+          cp android/app/build/outputs/apk/release/app-release.apk "sheenu-$VERSION.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sheenu-apk
+          path: mobile/${{ steps.name.outputs.file }}
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" "${{ steps.name.outputs.file }}" --title "Sheenu $GITHUB_REF_NAME" --notes "APK Android." || gh release upload "$GITHUB_REF_NAME" "${{ steps.name.outputs.file }}" --clobber
