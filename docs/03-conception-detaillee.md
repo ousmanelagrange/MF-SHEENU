@@ -841,7 +841,9 @@ Interface `PaymentGateway` : `start()` ouvre la transaction chez le prestataire 
 
 ### 12.7 Mobile hors connexion
 
-Les réponses des écrans de lecture (familles, personnes, arbre, fil, récits, albums, frise, collectes, diaspora, notifications) sont gardées sur le téléphone, par famille. Sans réseau, l'écran affiche la dernière version reçue avec un bandeau. Les actions ne sont pas mises en file d'attente : il faut le réseau pour publier, payer ou valider. Le cache est effacé à la déconnexion.
+Les réponses des écrans de lecture (familles, personnes, arbre, fil, récits, albums, frise, collectes, diaspora, notifications) sont gardées sur le téléphone, par famille. `offline.ts` les précharge à l'ouverture d'une famille ; sans réseau, la recherche de personnes et les fiches sont reconstituées à partir de l'arbre.
+
+Les actions passent par `sync.ts` : si le réseau manque, elles entrent dans une file d'envoi (AsyncStorage `sheenu.outbox`) avec une clé `Idempotency-Key`. La file repart dans l'ordre au retour du réseau ; une réponse 4xx marque l'envoi en échec (visible dans **Envois en attente**), une absence de réseau, un 5xx, un 409 `in_progress` ou un 429 le laissent en file. Détail et vérifications : [07 — Tests et sécurité](07-tests-et-securite.md) §5.
 
 ### 12.8 Points d'entrée
 
@@ -872,3 +874,62 @@ Les réponses des écrans de lecture (familles, personnes, arbre, fil, récits, 
 | Web | `/diaspora` | Carte, classement des pays, personnes du pays choisi |
 | Mobile | Plus | Notifications, la famille dans le monde ; compteur combiné sur l'onglet |
 | Mobile | Partout | Lecture hors connexion avec bandeau |
+
+## 13. Sécurité, robustesse et supervision
+
+Mesures, tests et résultats chiffrés : [07 — Tests et sécurité](07-tests-et-securite.md). Ici, l'organisation du code.
+
+### 13.1 Couche `app/security/`
+
+| Fichier | Rôle |
+|---|---|
+| `events.py` | `record()` : écrit un événement dans `security_event`, dans sa propre transaction (`AuxSession`), même si la requête échoue |
+| `ratelimit.py` | Fenêtres glissantes en mémoire par clé (adresse, compte) ; désactivable par `RATE_LIMIT=false` |
+| `middleware.py` | Middlewares ASGI, de l'extérieur vers l'intérieur : en-têtes de sécurité, métriques et numéro de requête (`request_metric` par minute, limite globale par adresse), taille des corps, compression, signature des médias, idempotence |
+| `media.py` | Liens de médias signés HMAC (6 h) ou présignés S3 ; `own_media()` refuse les adresses externes et les médias d'une autre famille |
+
+### 13.2 Sessions
+
+`auth_session` : une ligne par appareil, avec l'empreinte du jeton de rafraîchissement courant. À chaque rafraîchissement le jeton change ; un ancien jeton présenté de nouveau ferme toutes les sessions et incrémente `token_version` (les jetons d'accès en cours deviennent invalides). Une tolérance de 30 secondes couvre deux rafraîchissements simultanés du même appareil.
+
+### 13.3 Concurrence
+
+- Réactions et votes : `INSERT ... ON CONFLICT DO UPDATE` sur `uq_reaction` et `uq_poll_vote`.
+- Validation d'une proposition, d'un paiement, d'un texte de récit, d'une demande de rattachement : `SELECT ... FOR UPDATE` puis contrôle de l'état ; le second validateur reçoit 400.
+- `idempotency_key` : la première requête réserve la clé (`in_progress`), la réponse est stockée ; un rejeu reçoit la même réponse, un rejeu pendant le traitement reçoit 409.
+
+### 13.4 Base de données
+
+- Migration 0008 : tables de plateforme et déclencheurs d'ajout seul sur `audit_log`, `platform_audit`, `security_event`.
+- Migration 0009 : `family.graph_version`, incrémenté par des déclencheurs sur `person`, `parent_child`, `family_union`, `title_definition`, `title_holding`, `membership`, `delegation`.
+- `app/core/db.py` : pool principal (`DB_POOL_SIZE`, `DB_MAX_OVERFLOW`) et pool auxiliaire `aux_engine` pour les tables de plateforme (`DB_AUX_POOL_SIZE`) ; `statement_timeout` 30 s et `idle_in_transaction_session_timeout` 60 s par connexion (`DB_SESSION_GUARDS`).
+
+### 13.5 Cache de l'arbre
+
+`load_graph(ctx)` (`app/genealogy/graph.py`) garde par processus les 16 derniers graphes, indexés par famille, avec `graph_version` et la racine. Le graphe est chargé dans une session séparée : si sa version diffère de celle que voit la requête (modification de l'arbre non encore validée dans la transaction en cours), il est rechargé dans la transaction et n'est pas mis en cache.
+
+### 13.6 Supervision
+
+`user.is_platform_admin`, attribué uniquement par `python -m app.cli operator add`. Dépendance `Operator` (`app/core/deps.py`) sur toutes les routes `/platform/*`. Les nombres par famille sont calculés famille par famille dans leur contexte RLS ; aucun contenu n'est renvoyé. Chaque consultation et action est inscrite dans `platform_audit`.
+
+| Méthode | Chemin | Rôle |
+|---|---|---|
+| GET | `/platform/overview` | Santé, comptes, familles, trafic résumé |
+| GET | `/platform/traffic?hours=` | Requêtes, erreurs et latence par tranche |
+| GET | `/platform/events?severity=&kind=` | Journal de sécurité |
+| GET | `/platform/users?q=` | Comptes (identité, état, dernière connexion, sessions) |
+| GET | `/platform/families` | Familles en nombres |
+| GET | `/platform/audit` | Journal de l'opérateur |
+| POST | `/platform/users/{id}/disable` \| `enable` \| `unlock` \| `revoke-sessions` | Action sur un compte, motif obligatoire |
+| POST | `/platform/maintenance/purge` | Efface les clés d'idempotence de plus de 48 h et les compteurs de plus de 90 jours |
+
+Routes de compte ajoutées : `POST /auth/password`, `GET /auth/sessions`, `DELETE /auth/sessions/{id}`, `POST /auth/logout`, `POST /auth/logout-all`.
+
+### 13.7 Écrans
+
+| Plateforme | Écran | Contenu |
+|---|---|---|
+| Web | `/compte` | Mot de passe, appareils connectés, déconnexion de partout, accès à la supervision |
+| Web | `/supervision` | Vue d'ensemble, Sécurité, Comptes, Familles, Journal de l'opérateur |
+| Web, mobile | Partout | Bandeau hors connexion (nombre d'envois en attente sur mobile) |
+| Mobile | Plus → Envois en attente | File d'envoi : envoyer maintenant, relancer, abandonner |

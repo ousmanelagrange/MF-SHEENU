@@ -6,7 +6,7 @@ Plateforme privée de mémoire et d'organisation des grandes familles africaines
 
 | Dossier | Contenu |
 |---|---|
-| [`docs/`](docs) | [Analyse](docs/01-analyse.md), [conception globale](docs/02-conception-globale.md), [conception détaillée](docs/03-conception-detaillee.md), [déploiement](docs/04-deploiement.md), [guide du code](docs/05-guide-du-code.md) |
+| [`docs/`](docs) | [Analyse](docs/01-analyse.md), [conception globale](docs/02-conception-globale.md), [conception détaillée](docs/03-conception-detaillee.md), [déploiement](docs/04-deploiement.md), [guide du code](docs/05-guide-du-code.md), [tests et sécurité](docs/07-tests-et-securite.md) |
 | [`api/`](api) | API FastAPI + PostgreSQL |
 | [`web/`](web) | Application web React + Refine |
 | [`mobile/`](mobile) | Application mobile Expo |
@@ -47,3 +47,6 @@ npm run dev                     # http://localhost:5173
 | 4. Vie sociale | Fil, stories, annonces, sondages, modération, mémoriaux, anniversaires ; réunion de deux familles | Terminée |
 | 5. Mémoire | Récits audio et vidéo, transcriptions et traductions relues, albums, frise | Terminée |
 | 6. Intégrations | Notifications, rattachement par lien, résumé et rappels WhatsApp, Mobile Money (prêt à brancher), diaspora, mobile hors connexion | Terminée |
+| 7. Robustesse | Sécurité renforcée (sessions, verrouillage, débit, médias signés, journaux inaltérables), essai de charge multi-utilisateurs, envois hors connexion synchronisés, supervision de la plateforme avec audit | Terminée |
+
+Le guide utilisateur (pour les membres, responsables et l'opérateur) est tenu à part, dans un document partagé.
