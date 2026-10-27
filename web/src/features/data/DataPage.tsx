@@ -1,4 +1,5 @@
-// Données de l'arbre (administrateur) : import et export GEDCOM, doublons à fusionner.
+// Données de l'arbre (administrateur) : import et export GEDCOM, doublons à fusionner,
+// réunion avec une autre famille.
 
 import { InboxOutlined } from "@ant-design/icons";
 import { App, Button, Empty, Popconfirm, Spin, Upload } from "antd";
@@ -8,6 +9,7 @@ import { PersonLine } from "../../components/Person";
 import { api } from "../../lib/api";
 import { useFamily } from "../../lib/family";
 import type { PersonSummary } from "../../types";
+import { MergeSection } from "../family-merge/MergeSection";
 import { download } from "../tree/exporter";
 
 type Pair = { a: PersonSummary; b: PersonSummary };
@@ -114,6 +116,8 @@ export function DataPage() {
           </ul>
         )}
       </section>
+
+      <MergeSection />
     </div>
   );
 }

@@ -16,6 +16,7 @@ from app.modules.contributions.router import router as contributions_router
 from app.modules.data.router import router as data_router
 from app.modules.delegations.router import router as delegations_router
 from app.modules.families.router import router as families_router
+from app.modules.family_merges.router import router as family_merges_router
 from app.modules.invitations.router import router as invitations_router
 from app.modules.persons.router import router as persons_router
 from app.modules.proposals.router import router as proposals_router
@@ -55,6 +56,7 @@ for module_router in (
     delegations_router,
     data_router,
     contributions_router,
+    family_merges_router,
 ):
     api.include_router(module_router)
 app.include_router(api)

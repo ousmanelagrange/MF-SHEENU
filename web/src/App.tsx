@@ -24,6 +24,7 @@ import { ContributionsPage } from "./features/contributions/ContributionsPage";
 import { EventPage } from "./features/contributions/EventPage";
 import { ScalesPage } from "./features/contributions/ScalesPage";
 import { DataPage } from "./features/data/DataPage";
+import { MergeJoinPage } from "./features/family-merge/MergeJoinPage";
 import { ProposalsPage } from "./features/proposals/ProposalsPage";
 import { TreePage } from "./features/tree/TreePage";
 import { authProvider } from "./providers/authProvider";
@@ -63,6 +64,7 @@ export default function App() {
                   }
                 >
                   <Route path="/familles" element={<FamiliesPage />} />
+                  <Route path="/reunir/:token" element={<MergeJoinPage />} />
                   <Route element={<AppShell />}>
                     <Route index element={<HomePage />} />
                     <Route path="/arbre" element={<TreePage />} />

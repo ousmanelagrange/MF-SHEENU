@@ -38,6 +38,9 @@ class Family(Base):
     # Pas de FK stricte vers person : la racine est créée après la famille et la RLS
     # rendrait la vérification dépendante du contexte. Le service garantit la cohérence.
     root_person_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    # Famille réunie à une autre : elle disparaît des listes et n'est plus accessible.
+    merged_into_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True))
+    merged_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     settings: Mapped[dict] = mapped_column(JSONB, default=dict)
     created_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("app_user.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

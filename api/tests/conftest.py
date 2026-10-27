@@ -25,6 +25,7 @@ TABLES = [
     "title_definition",
     "family_union",
     "parent_child",
+    "family_merge",
     "invitation",
     "membership",
     "person",

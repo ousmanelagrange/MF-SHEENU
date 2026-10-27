@@ -80,6 +80,8 @@ def get_family_context(
     if membership is None:
         raise AppError(403, "not_a_member", "Vous n'êtes pas membre de cette famille.")
     family = db.get(Family, x_family_id)
+    if family.merged_into_id:
+        raise AppError(410, "family_merged", "Cette famille a été réunie à une autre famille.")
     set_family_context(db, family.id)
     return FamilyContext(db=db, user=user, family=family, membership=membership)
 

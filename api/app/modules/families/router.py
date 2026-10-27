@@ -27,7 +27,11 @@ def my_families(user: CurrentUser, db: DB) -> list[MyFamilyOut]:
     rows = db.execute(
         select(Family, Membership)
         .join(Membership, Membership.family_id == Family.id)
-        .where(Membership.user_id == user.id, Membership.status == "active")
+        .where(
+            Membership.user_id == user.id,
+            Membership.status == "active",
+            Family.merged_into_id.is_(None),
+        )
         .order_by(Family.name)
     ).all()
     return [

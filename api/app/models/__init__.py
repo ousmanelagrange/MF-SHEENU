@@ -11,6 +11,7 @@ from app.models.contribution import (
 )
 from app.models.delegation import Delegation
 from app.models.family import Family, Membership, Role
+from app.models.family_merge import FamilyMerge
 from app.models.invitation import Invitation
 from app.models.person import Person
 from app.models.proposal import Proposal, ProposalStatus
@@ -39,6 +40,7 @@ __all__ = [
     "Role",
     "Family",
     "Membership",
+    "FamilyMerge",
     "Person",
     "ParentChild",
     "FamilyUnion",
