@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { api } from "../api";
-import { Button, s } from "../components/ui";
+import { Button, s, Segmented } from "../components/ui";
 import { colors, fonts } from "../theme";
 
 type Proposal = {
@@ -51,22 +51,14 @@ export function ProposalsScreen() {
 
   return (
     <ScrollView style={{ backgroundColor: colors.cotton }} contentContainerStyle={{ paddingBottom: 40 }}>
-      <View style={{ flexDirection: "row", margin: 16, backgroundColor: colors.indigo50, borderRadius: 8, padding: 3 }}>
-        {(
-          [
-            ["review", "À valider"],
-            ["mine", "Mes propositions"],
-          ] as const
-        ).map(([v, label]) => (
-          <Pressable
-            key={v}
-            onPress={() => setView(v)}
-            style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: 6, backgroundColor: view === v ? colors.white : "transparent" }}
-          >
-            <Text style={{ fontFamily: view === v ? fonts.uiSemi : fonts.ui, color: colors.indigo900 }}>{label}</Text>
-          </Pressable>
-        ))}
-      </View>
+      <Segmented
+        value={view}
+        onChange={setView}
+        options={[
+          ["review", "À valider"],
+          ["mine", "Mes propositions"],
+        ]}
+      />
       {!items && <ActivityIndicator style={{ marginTop: 24 }} />}
       {items?.length === 0 && (
         <Text style={[s.lead, { paddingHorizontal: 20 }]}>

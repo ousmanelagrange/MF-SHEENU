@@ -22,6 +22,21 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "scheme": "sheenu"
+    "scheme": "sheenu",
+    "plugins": [
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Sheenu utilise vos photos pour les partager avec votre famille.",
+          "cameraPermission": "Sheenu utilise l'appareil photo pour les photos de famille."
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Sheenu utilise le micro pour enregistrer les récits des anciens."
+        }
+      ]
+    ]
   }
 }

@@ -726,3 +726,64 @@ Dans une seule transaction, l'arbre source est copié dans la famille d'accueil 
 | Mobile | Onglet Fil | Stories, publication rapide (texte), réactions, votes |
 | Mobile | Publication | Publication ouverte et commentaires |
 | Mobile | Moi → Propositions | Les propositions quittent la barre d'onglets au profit du Fil ; le badge reste sur « Moi » |
+
+## 11. Phase 5 — Mémoire
+
+Objectif : conserver les histoires racontées par les anciens dans leur langue, avec une transcription et des traductions fidèles (RG relatives aux récits), et rassembler les photos de famille.
+
+### 11.1 Tables (migration 0006, toutes sous RLS)
+
+| Table | Rôle |
+|---|---|
+| `narrative` | Récit : titre, langue du conteur, conteur (`teller_id`, souvent un ancien sans compte), auteur de l'enregistrement, média (`media_url`, `media_kind` audio ou vidéo), époque (`era` libre, `year` pour la frise), lieu, personnes citées |
+| `narrative_text` | Une version d'une **couche** : `original` (transcription), `fr`, `en`. Statut `pending`, `validated`, `superseded`, `rejected`, avec relecteur, date et motif |
+| `album` | Album photo : titre, description, année |
+| `album_photo` | Photo d'un album : adresse, légende, année, personnes reconnues (`person_ids`) |
+
+### 11.2 Couches de texte et relecture
+
+La fidélité d'un récit compte plus que sa vitesse de publication. Chaque couche n'a qu'une **version de référence** à la fois, et chaque changement garde la trace du précédent :
+
+1. tout membre propose une version d'une couche (première transcription, traduction, correction) ;
+2. un **gardien de la mémoire** (administrateur, secrétaire, chef de branche) la relit ; l'écran de relecture montre les ajouts et retraits mot à mot par rapport au texte actuel ;
+3. une fois validée, elle devient la référence ; l'ancienne passe en `superseded` et reste consultable ; un refus porte un motif visible par l'auteur ;
+4. la proposition d'un gardien est validée d'office, comme pour les propositions de la phase 2.
+
+La transcription automatique n'est pas branchée : aucun service gratuit ne reconnaît le shüpamom de façon fiable. Le modèle accepte toutefois qu'une transcription automatique arrive plus tard comme une proposition parmi d'autres, soumise à la même relecture.
+
+### 11.3 Médias
+
+`POST /uploads/media` reçoit un fichier audio ou vidéo (mp3, m4a, aac, ogg, webm, wav, mp4, mov), 30 Mo au plus, rangé tel quel dans le dossier de la famille (disque local ou Cloudflare R2). Sur le web, le micro du navigateur enregistre directement (MediaRecorder). Les images restent redimensionnées et converties en WebP par `POST /uploads/image`.
+
+### 11.4 Points d'entrée
+
+| Méthode | Chemin | Accès | Rôle |
+|---|---|---|---|
+| GET | `/narratives?person_id=&q=&to_review=` | membre | Récits ; ceux d'une personne (citée ou conteuse) ; ceux qui ont des textes à relire |
+| POST | `/narratives` | membre | Créer, avec un premier texte facultatif |
+| GET / PATCH / DELETE | `/narratives/{id}` | membre ; auteur ou gardien | Lire, modifier, supprimer |
+| GET | `/narratives/{id}/texts?layer=&status=` | membre | Historique des versions |
+| POST | `/narratives/{id}/texts` | membre | Proposer une version d'une couche |
+| POST | `/narrative-texts/{id}/validate` \| `reject` | gardien | Relecture, motif facultatif |
+| GET / POST | `/albums` | membre | Albums ; créer |
+| GET / PATCH / DELETE | `/albums/{id}` | membre ; auteur ou gardien | Album et ses photos |
+| POST | `/albums/{id}/photos` | membre | Ajouter une photo |
+| PATCH | `/album-photos/{id}` | membre (personnes) ; auteur ou gardien (légende, année) | Reconnaître des personnes, légender |
+| DELETE | `/album-photos/{id}` | auteur, gardien | Retirer |
+| GET | `/persons/{id}/photos` | membre | Photos où la personne est reconnue |
+| GET | `/timeline?person_id=` | membre | Frise : naissances, unions, décès, récits, albums ou photos, annonces de vie |
+| POST | `/uploads/media` | membre | Envoi audio ou vidéo |
+
+### 11.5 Écrans
+
+| Plateforme | Écran | Contenu |
+|---|---|---|
+| Web | `/memoire` | Récits : recherche, filtre « à relire », nouveau récit avec enregistrement au micro ou fichier |
+| Web | `/memoire/recits/:id` | Lecteur, édition bilingue (deux couches côte à côte, au choix), proposer, relire avec comparaison |
+| Web | `/memoire/albums`, `/memoire/albums/:id` | Albums, ajout de plusieurs photos, visionneuse, reconnaissance des personnes |
+| Web | `/memoire/frise` | Frise par décennie, filtres, autour d'une personne |
+| Web | Fiche d'une personne | Récits qui la concernent, photos où elle apparaît, lien vers sa frise |
+| Mobile | Plus → Mémoire | Récits, albums, frise |
+| Mobile | Récit | Lecteur audio, couches au choix, proposer une correction ou une traduction |
+| Mobile | Album | Grille, visionneuse, ajout de photos depuis la galerie |
+| Mobile | Fil | Publication avec photo depuis la galerie |

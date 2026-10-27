@@ -3,10 +3,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, FlatList, Image, Modal, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from "react-native";
-import { api } from "../api";
+import { api, uploadImage } from "../api";
 import { AuthorAvatar, PostCard } from "../components/PostCard";
 import { s } from "../components/ui";
 import { ago, type Post, type StoryGroup } from "../social";
+import { pickImages } from "../pickImages";
 import { colors, fonts } from "../theme";
 
 type Page = { items: Post[]; next_before: string | null };
@@ -66,7 +67,11 @@ function Stories({ groups }: { groups: StoryGroup[] }) {
 
   return (
     <>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 14, paddingHorizontal: 20, paddingVertical: 14 }}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ gap: 14, paddingHorizontal: 20, paddingVertical: 14 }}
+      >
         {groups.map((g, gi) => (
           <Pressable key={g.author.user_id} onPress={() => setOpen({ g: gi, i: 0 })} style={{ alignItems: "center", width: 64 }}>
             <View style={{ padding: 2, borderRadius: 32, borderWidth: 2, borderColor: colors.brass }}>
@@ -88,7 +93,11 @@ function Stories({ groups }: { groups: StoryGroup[] }) {
               </Text>
             </View>
             {current.caption && (
-              <Text style={{ position: "absolute", bottom: 48, left: 20, right: 20, fontFamily: fonts.ui, fontSize: 16, color: colors.white }}>{current.caption}</Text>
+              <Text
+                style={{ position: "absolute", bottom: 48, left: 20, right: 20, fontFamily: fonts.ui, fontSize: 16, color: colors.white }}
+              >
+                {current.caption}
+              </Text>
             )}
           </Pressable>
         )}
@@ -97,36 +106,69 @@ function Stories({ groups }: { groups: StoryGroup[] }) {
   );
 }
 
-/** Publication rapide d'un message texte. Les photos, annonces et sondages se font sur le web pour l'instant. */
+/** Publication rapide : un message, avec une photo si l'on veut. Annonces et sondages se font sur le web. */
 function Composer({ onPosted }: { onPosted: (p: Post) => void }) {
   const [text, setText] = useState("");
+  const [photo, setPhoto] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const empty = !text.trim() && !photo;
+  const attach = async () => {
+    const [asset] = await pickImages(false);
+    if (!asset) return;
+    setBusy(true);
+    try {
+      setPhoto(await uploadImage(asset));
+    } finally {
+      setBusy(false);
+    }
+  };
   const publish = async () => {
     setBusy(true);
     try {
-      onPosted(await api<Post>("/posts", { method: "POST", body: { kind: "post", text } }));
+      onPosted(await api<Post>("/posts", { method: "POST", body: { kind: "post", text, media: photo ? [photo] : [] } }));
       setText("");
+      setPhoto(null);
     } finally {
       setBusy(false);
     }
   };
   return (
-    <View style={{ flexDirection: "row", gap: 8, alignItems: "flex-end", paddingHorizontal: 20, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: colors.line }}>
-      <TextInput
-        value={text}
-        onChangeText={setText}
-        placeholder="Une nouvelle à partager avec la famille ?"
-        placeholderTextColor={colors.muted}
-        multiline
-        style={[s.input, { flex: 1, maxHeight: 120, fontSize: 15 }]}
-      />
-      <Pressable
-        onPress={publish}
-        disabled={!text.trim() || busy}
-        style={{ backgroundColor: colors.indigo700, borderRadius: 6, paddingHorizontal: 14, paddingVertical: 12, opacity: !text.trim() || busy ? 0.5 : 1 }}
-      >
-        <Text style={{ fontFamily: fonts.uiSemi, color: colors.white }}>Publier</Text>
-      </Pressable>
+    <View style={{ paddingHorizontal: 20, paddingBottom: 14, borderBottomWidth: 1, borderBottomColor: colors.line, gap: 10 }}>
+      <View style={{ flexDirection: "row", gap: 8, alignItems: "flex-end" }}>
+        <TextInput
+          value={text}
+          onChangeText={setText}
+          placeholder="Une nouvelle à partager avec la famille ?"
+          placeholderTextColor={colors.muted}
+          multiline
+          style={[s.input, { flex: 1, maxHeight: 120, fontSize: 15 }]}
+        />
+        <Pressable
+          onPress={publish}
+          disabled={empty || busy}
+          style={{
+            backgroundColor: colors.indigo700,
+            borderRadius: 6,
+            paddingHorizontal: 14,
+            paddingVertical: 12,
+            opacity: empty || busy ? 0.5 : 1,
+          }}
+        >
+          <Text style={{ fontFamily: fonts.uiSemi, color: colors.white }}>Publier</Text>
+        </Pressable>
+      </View>
+      {photo ? (
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+          <Image source={{ uri: photo }} style={{ width: 64, height: 64, borderRadius: 6 }} />
+          <Pressable onPress={() => setPhoto(null)} hitSlop={8}>
+            <Text style={{ fontFamily: fonts.uiMedium, color: colors.muted }}>Retirer la photo</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <Pressable onPress={attach} hitSlop={8} disabled={busy}>
+          <Text style={{ fontFamily: fonts.uiMedium, color: colors.indigo700 }}>Ajouter une photo</Text>
+        </Pressable>
+      )}
     </View>
   );
 }

@@ -154,3 +154,22 @@ export const s = StyleSheet.create({
   section: { fontFamily: fonts.uiSemi, fontSize: 14, color: colors.muted, paddingHorizontal: 20, paddingTop: 24, paddingBottom: 8 },
   error: { fontFamily: fonts.ui, color: colors.camwood, marginBottom: 12 },
 });
+
+/** Choix entre quelques vues (ex. « À valider » / « Mes propositions »). */
+export function Segmented<T extends string>({ value, options, onChange }: { value: T; options: [T, string][]; onChange: (v: T) => void }) {
+  return (
+    <View style={{ flexDirection: "row", margin: 16, backgroundColor: colors.indigo50, borderRadius: 8, padding: 3 }}>
+      {options.map(([v, label]) => (
+        <Pressable
+          key={v}
+          accessibilityRole="tab"
+          accessibilityState={{ selected: value === v }}
+          onPress={() => onChange(v)}
+          style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: 6, backgroundColor: value === v ? colors.white : "transparent" }}
+        >
+          <Text style={{ fontFamily: value === v ? fonts.uiSemi : fonts.ui, color: colors.indigo900 }}>{label}</Text>
+        </Pressable>
+      ))}
+    </View>
+  );
+}

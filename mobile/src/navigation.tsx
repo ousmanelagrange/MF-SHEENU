@@ -1,6 +1,6 @@
 // Navigation une fois connecté : choix de la famille, puis cinq onglets
-// (Fil, Personnes, Arbre, Cotisations, Moi). Fiches, publications, collectes et propositions
-// s'ouvrent par-dessus les onglets ; les propositions sont accessibles depuis « Moi ».
+// (Fil, Personnes, Arbre, Cotisations, Plus). Fiches, publications, collectes, mémoire et
+// propositions s'ouvrent par-dessus les onglets ; mémoire et propositions depuis « Plus ».
 
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { DefaultTheme, NavigationContainer, type NavigationProp } from "@react-navigation/native";
@@ -8,12 +8,15 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useEffect, useState } from "react";
 import { Platform, Pressable, ScrollView, Text } from "react-native";
 import { api, session } from "./api";
-import { FeedIcon, MeIcon, PeopleIcon, TreeIcon, WalletIcon } from "./components/icons";
+import { FeedIcon, MoreIcon, PeopleIcon, TreeIcon, WalletIcon } from "./components/icons";
 import { s } from "./components/ui";
+import { AlbumScreen } from "./screens/AlbumScreen";
 import { ContributionsScreen } from "./screens/ContributionsScreen";
 import { EventScreen } from "./screens/EventScreen";
 import { FamiliesScreen } from "./screens/FamiliesScreen";
 import { FeedScreen } from "./screens/FeedScreen";
+import { MemoryScreen } from "./screens/MemoryScreen";
+import { NarrativeScreen } from "./screens/NarrativeScreen";
 import { PeopleScreen } from "./screens/PeopleScreen";
 import { PersonScreen } from "./screens/PersonScreen";
 import { PostScreen } from "./screens/PostScreen";
@@ -29,6 +32,9 @@ type RootRoutes = {
   Event: { id: string };
   Post: { id: string };
   Proposals: undefined;
+  Memory: undefined;
+  Narrative: { id: string };
+  Album: { id: string };
 };
 type Nav = NavigationProp<RootRoutes>;
 
@@ -37,7 +43,14 @@ const Tabs = createBottomTabNavigator();
 
 const theme = {
   ...DefaultTheme,
-  colors: { ...DefaultTheme.colors, primary: colors.indigo700, background: colors.cotton, card: colors.white, text: colors.indigo900, border: colors.line },
+  colors: {
+    ...DefaultTheme.colors,
+    primary: colors.indigo700,
+    background: colors.cotton,
+    card: colors.white,
+    text: colors.indigo900,
+    border: colors.line,
+  },
 };
 const headerTitleStyle = { fontFamily: fonts.name, fontSize: 18, color: colors.indigo900 };
 
@@ -67,9 +80,7 @@ export function AppNavigation({ onLogout }: { onLogout: () => void }) {
           )}
         </Stack.Screen>
         <Stack.Screen name="Main" options={{ headerShown: false }}>
-          {({ navigation }) => (
-            <MainTabs family={family} toReview={toReview} nav={navigation as unknown as Nav} onLogout={onLogout} />
-          )}
+          {({ navigation }) => <MainTabs family={family} toReview={toReview} nav={navigation as unknown as Nav} onLogout={onLogout} />}
         </Stack.Screen>
         <Stack.Screen name="Event" options={{ title: "Collecte" }}>
           {({ route, navigation }) => (
@@ -78,6 +89,20 @@ export function AppNavigation({ onLogout }: { onLogout: () => void }) {
         </Stack.Screen>
         <Stack.Screen name="Post" options={{ title: "Publication" }}>
           {({ route }) => <PostScreen id={route.params.id} />}
+        </Stack.Screen>
+        <Stack.Screen name="Memory" options={{ title: "Mémoire de la famille" }}>
+          {({ navigation }) => (
+            <MemoryScreen
+              onOpenNarrative={(id) => navigation.push("Narrative", { id })}
+              onOpenAlbum={(id) => navigation.push("Album", { id })}
+            />
+          )}
+        </Stack.Screen>
+        <Stack.Screen name="Narrative" options={{ title: "Récit" }}>
+          {({ route, navigation }) => <NarrativeScreen id={route.params.id} onOpenPerson={(id) => navigation.push("Person", { id })} />}
+        </Stack.Screen>
+        <Stack.Screen name="Album" options={{ title: "Album" }}>
+          {({ route }) => <AlbumScreen id={route.params.id} />}
         </Stack.Screen>
         <Stack.Screen name="Proposals" options={{ title: "Propositions" }}>
           {() => <ProposalsScreen />}
@@ -119,8 +144,12 @@ function MainTabs({ family, toReview, nav, onLogout }: { family: MyFamily | null
         {() => <ContributionsScreen onOpen={(id) => nav.navigate("Event", { id })} />}
       </Tabs.Screen>
       <Tabs.Screen
-        name="Moi"
-        options={{ tabBarIcon: MeIcon, tabBarBadge: toReview > 0 ? toReview : undefined, tabBarBadgeStyle: { backgroundColor: colors.brass } }}
+        name="Plus"
+        options={{
+          tabBarIcon: MoreIcon,
+          tabBarBadge: toReview > 0 ? toReview : undefined,
+          tabBarBadgeStyle: { backgroundColor: colors.brass },
+        }}
       >
         {() => (
           <ScrollView style={{ backgroundColor: colors.cotton }}>
@@ -128,6 +157,7 @@ function MainTabs({ family, toReview, nav, onLogout }: { family: MyFamily | null
               {family?.name}, {ROLE_LABELS[family?.role ?? "member"]?.toLowerCase()}
             </Text>
             {family?.person_id && <MenuRow label="Ma fiche" onPress={() => open(family.person_id!)} />}
+            <MenuRow label="Mémoire de la famille" onPress={() => nav.navigate("Memory")} />
             <MenuRow label="Propositions" count={toReview} onPress={() => nav.navigate("Proposals")} />
             <MenuRow
               label="Changer de famille"

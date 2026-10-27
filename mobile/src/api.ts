@@ -105,3 +105,23 @@ export async function api<T>(
   if (res.status === 204) return undefined as T;
   return res.json();
 }
+
+/** Envoie une photo choisie sur l'appareil (expo-image-picker) et renvoie son adresse. */
+export async function uploadImage(asset: { uri: string; mimeType?: string | null; fileName?: string | null }): Promise<string> {
+  const form = new FormData();
+  const name = asset.fileName ?? "photo.jpg";
+  const type = asset.mimeType ?? "image/jpeg";
+  if (asset.uri.startsWith("blob:") || asset.uri.startsWith("data:")) {
+    // Version web : l'image est déjà dans le navigateur
+    form.append("file", await (await fetch(asset.uri)).blob(), name);
+  } else {
+    // iOS / Android : React Native lit le fichier à partir de son adresse locale
+    form.append("file", { uri: asset.uri, name, type } as unknown as Blob);
+  }
+  const headers: Record<string, string> = {};
+  if (cache.access) headers.Authorization = `Bearer ${cache.access}`;
+  if (cache.family) headers["X-Family-Id"] = cache.family;
+  const res = await fetch(`${API_URL}/api/v1/uploads/image`, { method: "POST", headers, body: form });
+  if (!res.ok) throw new ApiError(res.status, "upload_failed", "L'envoi de la photo a échoué.");
+  return (await res.json()).url;
+}

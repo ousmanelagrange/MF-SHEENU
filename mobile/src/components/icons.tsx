@@ -50,3 +50,12 @@ export const FeedIcon = ({ color, size = 22 }: P) => (
     <Path d="M8 9h8M8 12.5h5" />
   </Svg>
 );
+
+export const MoreIcon = ({ color, size = 22 }: P) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8}>
+    <Rect x={4} y={4} width={6.5} height={6.5} rx={1.5} />
+    <Rect x={13.5} y={4} width={6.5} height={6.5} rx={1.5} />
+    <Rect x={4} y={13.5} width={6.5} height={6.5} rx={1.5} />
+    <Rect x={13.5} y={13.5} width={6.5} height={6.5} rx={1.5} />
+  </Svg>
+);
