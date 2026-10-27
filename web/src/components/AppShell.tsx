@@ -26,6 +26,7 @@ import { useFamily } from "../lib/family";
 import { ROLE_LABELS } from "../types";
 import { useProposalCounts } from "../features/proposals/useProposalCounts";
 import { NtienyaBand, Wordmark } from "./Ntienya";
+import { OfflineBanner } from "./OfflineBanner";
 
 export function AppShell() {
   const { family, loading, isAdmin, canInvite } = useFamily();
@@ -115,11 +116,14 @@ export function AppShell() {
           />
         </nav>
         <div className="rail__foot">
-          <span>{me?.full_name}</span>
+          <button onClick={() => navigate("/compte")} title="Mon compte">
+            {me?.full_name}
+          </button>
           <button onClick={() => logout()}>Se déconnecter</button>
         </div>
       </aside>
       <div className="main">
+        <OfflineBanner />
         <div className="topbar-mobile">
           <Wordmark />
           <span style={{ flex: 1 }} />

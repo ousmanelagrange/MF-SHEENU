@@ -1862,3 +1862,65 @@ blockquote.modal-note {
     grid-template-columns: 1fr auto;
   }
 }
+
+/* ---------- Supervision ---------- */
+
+.tabs-nav a {
+  cursor: pointer;
+}
+.stat-strip > div.is-alert b {
+  color: var(--camwood);
+}
+.platform-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 3fr) minmax(0, 2fr);
+  gap: 48px;
+}
+.facts.health {
+  display: grid;
+  grid-template-columns: 170px 1fr;
+  gap: 8px 16px;
+  margin: 0;
+}
+.traffic-chart {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.traffic-chart__grid {
+  stroke: var(--line);
+}
+.traffic-chart__tick {
+  fill: var(--muted);
+  font-size: 11px;
+}
+.traffic-chart__bar {
+  fill: var(--indigo-300);
+}
+.traffic-chart__error {
+  fill: var(--camwood);
+}
+.rail__foot > button:first-child {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (max-width: 900px) {
+  .platform-grid {
+    grid-template-columns: 1fr;
+  }
+  .stat-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.offline-banner {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  padding: 10px 24px;
+  background: var(--brass-soft);
+  color: var(--indigo-900);
+  font-size: 14px;
+  border-bottom: 1px solid var(--line);
+}

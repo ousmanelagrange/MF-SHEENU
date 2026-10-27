@@ -46,6 +46,10 @@ export const authProvider: AuthProvider = {
   },
 
   logout: async () => {
+    // Ferme la session de cet appareil côté serveur (le jeton de rafraîchissement devient inutile)
+    if (session.refresh) {
+      await api("/auth/logout", { method: "POST", body: { refresh_token: session.refresh }, family: false }).catch(() => undefined);
+    }
     session.clear();
     return { success: true, redirectTo: "/connexion" };
   },

@@ -46,9 +46,14 @@ export function FamiliesPage() {
       <div className="page" style={{ maxWidth: 720 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 48 }}>
           <Wordmark />
-          <Button type="text" onClick={() => logout()}>
-            Se déconnecter
-          </Button>
+          <span>
+            <Button type="text" onClick={() => navigate("/compte")}>
+              Mon compte
+            </Button>
+            <Button type="text" onClick={() => logout()}>
+              Se déconnecter
+            </Button>
+          </span>
         </div>
         <h1 className="page__title">Vos familles</h1>
         <p className="page__lead">

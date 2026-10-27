@@ -15,7 +15,9 @@ import { TitlesPage } from "./features/titles/TitlesPage";
 import { LoginPage, RegisterPage } from "./features/auth/AuthPages";
 import { FamiliesPage } from "./features/families/FamiliesPage";
 import { HomePage } from "./features/home/HomePage";
+import { AccountPage } from "./features/account/AccountPage";
 import { JoinPage } from "./features/auth/JoinPage";
+import { PlatformPage } from "./features/platform/PlatformPage";
 import { JoinRequestPage } from "./features/join/JoinRequestPage";
 import { KinshipPage } from "./features/kinship/KinshipPage";
 import { PersonFormPage } from "./features/persons/PersonFormPage";
@@ -75,6 +77,8 @@ export default function App() {
                 >
                   <Route path="/familles" element={<FamiliesPage />} />
                   <Route path="/reunir/:token" element={<MergeJoinPage />} />
+                  <Route path="/compte" element={<AccountPage />} />
+                  <Route path="/supervision" element={<PlatformPage />} />
                   <Route element={<AppShell />}>
                     <Route index element={<HomePage />} />
                     <Route path="/fil" element={<FeedPage />} />
