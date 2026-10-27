@@ -1,5 +1,5 @@
-// Navigation une fois connecté : choix de la famille, puis quatre onglets
-// (Personnes, Arbre, Propositions, Moi). Une fiche s'ouvre par-dessus les onglets.
+// Navigation une fois connecté : choix de la famille, puis cinq onglets
+// (Personnes, Arbre, Cotisations, Propositions, Moi). Une fiche s'ouvre par-dessus les onglets.
 
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { DefaultTheme, NavigationContainer, type NavigationProp } from "@react-navigation/native";
@@ -7,8 +7,10 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { useEffect, useState } from "react";
 import { Platform, Pressable, ScrollView, Text } from "react-native";
 import { api, session } from "./api";
-import { CheckIcon, MeIcon, PeopleIcon, TreeIcon } from "./components/icons";
+import { CheckIcon, MeIcon, PeopleIcon, TreeIcon, WalletIcon } from "./components/icons";
 import { s } from "./components/ui";
+import { ContributionsScreen } from "./screens/ContributionsScreen";
+import { EventScreen } from "./screens/EventScreen";
 import { FamiliesScreen } from "./screens/FamiliesScreen";
 import { PeopleScreen } from "./screens/PeopleScreen";
 import { PersonScreen } from "./screens/PersonScreen";
@@ -17,7 +19,7 @@ import { TreeScreen } from "./screens/TreeScreen";
 import { colors, fonts } from "./theme";
 import { ROLE_LABELS, type MyFamily } from "./types";
 
-type RootRoutes = { Families: undefined; Main: undefined; Person: { id: string } };
+type RootRoutes = { Families: undefined; Main: undefined; Person: { id: string }; Event: { id: string } };
 type Nav = NavigationProp<RootRoutes>;
 
 const Stack = createNativeStackNavigator<RootRoutes>();
@@ -59,6 +61,11 @@ export function AppNavigation({ onLogout }: { onLogout: () => void }) {
             <MainTabs family={family} toReview={toReview} nav={navigation as unknown as Nav} onLogout={onLogout} />
           )}
         </Stack.Screen>
+        <Stack.Screen name="Event" options={{ title: "Collecte" }}>
+          {({ route, navigation }) => (
+            <EventScreen id={route.params.id} meId={family?.person_id ?? null} onOpenPerson={(id) => navigation.push("Person", { id })} />
+          )}
+        </Stack.Screen>
         <Stack.Screen name="Person" options={{ title: "" }}>
           {({ route, navigation }) => (
             <PersonScreen id={route.params.id} meId={family?.person_id ?? null} onOpen={(id) => navigation.push("Person", { id })} />
@@ -88,6 +95,9 @@ function MainTabs({ family, toReview, nav, onLogout }: { family: MyFamily | null
       </Tabs.Screen>
       <Tabs.Screen name="Arbre" options={{ tabBarIcon: TreeIcon }}>
         {() => <TreeScreen onOpen={open} />}
+      </Tabs.Screen>
+      <Tabs.Screen name="Cotisations" options={{ tabBarIcon: WalletIcon }}>
+        {() => <ContributionsScreen onOpen={(id) => nav.navigate("Event", { id })} />}
       </Tabs.Screen>
       <Tabs.Screen
         name="Propositions"

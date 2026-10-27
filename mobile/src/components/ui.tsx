@@ -63,7 +63,17 @@ export function TitleChip({ person }: { person: PersonSummary }) {
   );
 }
 
-export function PersonRow({ person, meta, onPress }: { person: PersonSummary; meta?: string; onPress?: () => void }) {
+export function PersonRow({
+  person,
+  meta,
+  metaColor,
+  onPress,
+}: {
+  person: PersonSummary;
+  meta?: string;
+  metaColor?: string;
+  onPress?: () => void;
+}) {
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [s.row, pressed && { backgroundColor: colors.indigo50 }]}>
       <Avatar person={person} />
@@ -76,7 +86,7 @@ export function PersonRow({ person, meta, onPress }: { person: PersonSummary; me
         </View>
         {!!lifeSpan(person) && <Text style={s.sub}>{lifeSpan(person)}</Text>}
       </View>
-      {meta ? <Text style={s.meta}>{meta}</Text> : null}
+      {meta ? <Text style={[s.meta, metaColor ? { color: metaColor, fontFamily: fonts.uiMedium } : null]}>{meta}</Text> : null}
     </Pressable>
   );
 }

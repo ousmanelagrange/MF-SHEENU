@@ -35,3 +35,11 @@ export const MeIcon = ({ color, size = 22 }: P) => (
     <Path d="M5 20c1-3.6 3.8-5.6 7-5.6s6 2 7 5.6" />
   </Svg>
 );
+
+export const WalletIcon = ({ color, size = 22 }: P) => (
+  <Svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth={1.8}>
+    <Rect x={3} y={6} width={18} height={13} rx={2.5} />
+    <Path d="M3 10h18M16 14.5h2" />
+    <Path d="M6 6l9-3 1.5 3" />
+  </Svg>
+);
