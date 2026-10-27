@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, FlatList, TextInput, View } from "react-native";
-import { api } from "../api";
+import { api, ApiError } from "../api";
+import { searchOffline } from "../offline";
 import { PersonRow, s } from "../components/ui";
 import { colors } from "../theme";
 import type { PersonSummary } from "../types";
@@ -19,9 +20,17 @@ export function PeopleScreen({ onOpen }: { onOpen: (id: string) => void }) {
   const load = useCallback(async (query: string, skip: number) => {
     setLoading(true);
     try {
-      const r = await api<{ items: PersonSummary[]; total: number }>("/persons", {
-        query: { q: query, skip, limit: PAGE, sort: "precedence" },
-      });
+      let r: { items: PersonSummary[]; total: number };
+      try {
+        r = await api<{ items: PersonSummary[]; total: number }>("/persons", {
+          query: { q: query, skip, limit: PAGE, sort: "precedence" },
+        });
+      } catch (e) {
+        // Hors connexion, une recherche jamais faite est menée dans l'arbre gardé sur le téléphone
+        const local = e instanceof ApiError && e.code === "offline" ? await searchOffline(query, skip, PAGE) : null;
+        if (!local) throw e;
+        r = local;
+      }
       setTotal(r.total);
       setItems((prev) => (skip === 0 ? r.items : [...prev, ...r.items]));
     } finally {

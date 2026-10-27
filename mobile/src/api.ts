@@ -1,6 +1,7 @@
 // Client HTTP mobile : jetons conservés sur l'appareil, rafraîchissement automatique, famille courante,
 // et cache hors connexion : les dernières réponses des écrans de lecture sont gardées sur le
-// téléphone et réaffichées quand le réseau manque (ENF-04).
+// téléphone et réaffichées quand le réseau manque (ENF-04). Les envois faits hors connexion
+// passent par la file d'attente de sync.ts, qui les rejoue au retour du réseau.
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -57,31 +58,76 @@ export class ApiError extends Error {
   }
 }
 
-async function refresh(): Promise<boolean> {
-  if (!cache.refresh) return false;
-  const r = await fetch(`${API_URL}/api/v1/auth/refresh`, {
+// Un seul rafraîchissement à la fois : le jeton de rafraîchissement change à chaque usage
+// (rotation), deux demandes simultanées avec le même jeton ressembleraient à un vol.
+let refreshing: Promise<boolean> | null = null;
+
+export function refresh(): Promise<boolean> {
+  if (!cache.refresh) return Promise.resolve(false);
+  refreshing ??= fetch(`${API_URL}/api/v1/auth/refresh`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ refresh_token: cache.refresh }),
-  });
-  if (!r.ok) return false;
-  const t = await r.json();
-  await session.setTokens(t.access_token, t.refresh_token);
-  return true;
+  })
+    .then(async (r) => {
+      if (!r.ok) return false;
+      const t = await r.json();
+      await session.setTokens(t.access_token, t.refresh_token);
+      return true;
+    })
+    .catch(() => false)
+    .finally(() => {
+      refreshing = null;
+    });
+  return refreshing;
+}
+
+/** fetch avec délai maximal : sur un réseau qui ne répond plus, on bascule hors connexion. */
+function fetchWithTimeout(url: string, init: RequestInit, ms = 15_000): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return fetch(url, { ...init, signal: controller.signal }).finally(() => clearTimeout(timer));
 }
 
 // ---------- Cache hors connexion ----------
 
 /** Écrans relus hors connexion. Les actions (POST, PATCH…) ne sont jamais rejouées. */
-const CACHED = ["/families", "/persons", "/tree", "/feed", "/narratives", "/albums", "/timeline", "/contributions/events", "/diaspora", "/notifications"];
+const CACHED = ["/families", "/persons", "/tree", "/feed", "/posts", "/stories", "/proposals", "/narratives", "/albums", "/timeline", "/contributions/events", "/diaspora", "/notifications"];
 const cacheKey = (url: string) => `sheenu.cache.${cache.family ?? "-"}.${url}`;
 
 let offline = false;
 const listeners = new Set<(offline: boolean) => void>();
-function setOffline(value: boolean) {
+export function setOffline(value: boolean) {
   if (value === offline) return;
   offline = value;
   listeners.forEach((l) => l(value));
+}
+export const isOffline = () => offline;
+
+/** Le serveur répond-il ? (appelé régulièrement tant qu'on est hors connexion) */
+export async function ping(): Promise<boolean> {
+  try {
+    const r = await fetchWithTimeout(`${API_URL}/health`, {}, 5_000);
+    setOffline(!r.ok);
+    return r.ok;
+  } catch {
+    setOffline(true);
+    return false;
+  }
+}
+
+function buildUrl(path: string, query?: Record<string, string | number | undefined>) {
+  const qs = Object.entries(query ?? {})
+    .filter(([, v]) => v !== undefined && v !== "")
+    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
+    .join("&");
+  return `${API_URL}/api/v1${path}${qs ? `?${qs}` : ""}`;
+}
+
+/** Dernière réponse gardée pour cette adresse (lecture hors connexion), ou null. */
+export async function readCache<T>(path: string, query?: Record<string, string | number | undefined>): Promise<T | null> {
+  const saved = await AsyncStorage.getItem(cacheKey(buildUrl(path, query))).catch(() => null);
+  return saved ? (JSON.parse(saved) as T) : null;
 }
 /** S'abonner au passage hors connexion / en ligne ; renvoie la fonction de désabonnement. */
 export function onConnectivity(listener: (offline: boolean) => void) {
@@ -89,23 +135,26 @@ export function onConnectivity(listener: (offline: boolean) => void) {
   return () => void listeners.delete(listener);
 }
 
-export async function api<T>(
-  path: string,
-  opts: { method?: string; body?: unknown; query?: Record<string, string | number | undefined> } = {},
-): Promise<T> {
-  const qs = Object.entries(opts.query ?? {})
-    .filter(([, v]) => v !== undefined && v !== "")
-    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
-    .join("&");
-  const url = `${API_URL}/api/v1${path}${qs ? `?${qs}` : ""}`;
+export type ApiOptions = {
+  method?: string;
+  body?: unknown;
+  query?: Record<string, string | number | undefined>;
+  family?: string | null; // famille visée, si ce n'est pas la famille courante (rejeu de la file)
+  idempotencyKey?: string; // rend l'envoi rejouable sans doublon
+};
+
+export async function api<T>(path: string, opts: ApiOptions = {}): Promise<T> {
+  const url = buildUrl(path, opts.query);
   const method = opts.method ?? "GET";
   const cacheable = method === "GET" && CACHED.some((prefix) => path.startsWith(prefix));
   const send = () => {
     const headers: Record<string, string> = {};
     if (cache.access) headers.Authorization = `Bearer ${cache.access}`;
-    if (cache.family) headers["X-Family-Id"] = cache.family;
+    const family = opts.family !== undefined ? opts.family : cache.family;
+    if (family) headers["X-Family-Id"] = family;
+    if (opts.idempotencyKey) headers["Idempotency-Key"] = opts.idempotencyKey;
     if (opts.body !== undefined) headers["Content-Type"] = "application/json";
-    return fetch(url, {
+    return fetchWithTimeout(url, {
       method,
       headers,
       body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,

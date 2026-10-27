@@ -30,7 +30,14 @@ export function AudioPlayer({ uri }: { uri: string }) {
         onPress={toggle}
         accessibilityRole="button"
         accessibilityLabel={status.playing ? "Pause" : "Écouter"}
-        style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: colors.indigo700, alignItems: "center", justifyContent: "center" }}
+        style={{
+          width: 44,
+          height: 44,
+          borderRadius: 22,
+          backgroundColor: colors.indigo700,
+          alignItems: "center",
+          justifyContent: "center",
+        }}
       >
         <Svg width={18} height={18} viewBox="0 0 18 18">
           {status.playing ? (

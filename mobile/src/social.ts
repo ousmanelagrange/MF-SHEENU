@@ -24,6 +24,7 @@ export interface Post {
   my_vote: string | null;
   can_edit: boolean;
   can_moderate: boolean;
+  pending?: boolean; // créé hors connexion, pas encore envoyé
 }
 
 export interface CommentItem {
@@ -32,7 +33,11 @@ export interface CommentItem {
   text: string;
   created_at: string;
   can_delete: boolean;
+  pending?: boolean;
 }
+
+/** Auteur affiché sur un élément créé hors connexion, avant sa synchronisation. */
+export const ME: Author = { user_id: "moi", name: "Vous", person: null };
 
 export interface StoryGroup {
   author: Author;

@@ -2,11 +2,24 @@
 // (annonces épinglées d'abord). Tirer vers le bas recharge ; la fin de liste charge les plus anciennes.
 
 import { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, FlatList, Image, Modal, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from "react-native";
-import { api, uploadImage } from "../api";
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Image,
+  Modal,
+  Pressable,
+  RefreshControl,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import { api, isOffline, uploadImage } from "../api";
+import { isQueued, onSynced, send } from "../sync";
 import { AuthorAvatar, PostCard } from "../components/PostCard";
 import { s } from "../components/ui";
-import { ago, type Post, type StoryGroup } from "../social";
+import { ago, ME, type Post, type StoryGroup } from "../social";
 import { pickImages } from "../pickImages";
 import { colors, fonts } from "../theme";
 
@@ -30,6 +43,7 @@ export function FeedScreen({ onOpenPost }: { onOpenPost: (id: string) => void })
     setRefreshing(false);
   }, [load]);
   useEffect(() => void reload(), [reload]);
+  useEffect(() => onSynced(() => void reload()), [reload]); // les envois en attente sont passés
 
   const replace = (p: Post) => setPosts((list) => list?.map((x) => (x.id === p.id ? p : x)) ?? null);
 
@@ -107,12 +121,35 @@ function Stories({ groups }: { groups: StoryGroup[] }) {
 }
 
 /** Publication rapide : un message, avec une photo si l'on veut. Annonces et sondages se font sur le web. */
+/** Publication affichée tout de suite, en attente d'envoi. */
+function localPost(text: string): Post {
+  return {
+    id: `local-${Date.now()}`,
+    kind: "post",
+    life_event: null,
+    text,
+    media: [],
+    author: ME,
+    pinned: false,
+    created_at: new Date().toISOString(),
+    reactions: {},
+    my_reaction: null,
+    comments_count: 0,
+    poll: null,
+    my_vote: null,
+    can_edit: false,
+    can_moderate: false,
+    pending: true,
+  };
+}
+
 function Composer({ onPosted }: { onPosted: (p: Post) => void }) {
   const [text, setText] = useState("");
   const [photo, setPhoto] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const empty = !text.trim() && !photo;
   const attach = async () => {
+    if (isOffline()) return Alert.alert("Pas de réseau", "Les photos s'envoient avec une connexion. Le texte, lui, peut partir plus tard.");
     const [asset] = await pickImages(false);
     if (!asset) return;
     setBusy(true);
@@ -125,9 +162,16 @@ function Composer({ onPosted }: { onPosted: (p: Post) => void }) {
   const publish = async () => {
     setBusy(true);
     try {
-      onPosted(await api<Post>("/posts", { method: "POST", body: { kind: "post", text, media: photo ? [photo] : [] } }));
+      const r = await send<Post>("/posts", {
+        method: "POST",
+        body: { kind: "post", text, media: photo ? [photo] : [] },
+        label: `Publication : ${text.slice(0, 60)}`,
+      });
+      onPosted(isQueued(r) ? localPost(text) : r);
       setText("");
       setPhoto(null);
+    } catch (e) {
+      Alert.alert("Publication impossible", (e as Error).message);
     } finally {
       setBusy(false);
     }

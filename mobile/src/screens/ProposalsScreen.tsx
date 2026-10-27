@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { api } from "../api";
+import { isQueued, send, tellQueued } from "../sync";
 import { Button, s, Segmented } from "../components/ui";
 import { colors, fonts } from "../theme";
 
@@ -40,9 +41,17 @@ export function ProposalsScreen() {
 
   const act = async (id: string, action: "accept" | "reject", body: object = {}) => {
     try {
-      await api(`/proposals/${id}/${action}`, { method: "POST", body });
+      const r = await send(`/proposals/${id}/${action}`, {
+        method: "POST",
+        body,
+        label: `${action === "accept" ? "Acceptation" : "Refus"} d'une proposition`,
+      });
       setRejecting(null);
       setNote("");
+      if (isQueued(r)) {
+        setItems((list) => list?.filter((p) => p.id !== id) ?? null);
+        return tellQueued();
+      }
       load();
     } catch (e) {
       Alert.alert("Action impossible", (e as Error).message);

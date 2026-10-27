@@ -7,7 +7,9 @@ import { StatusBar } from "expo-status-bar";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
-import { session } from "./src/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_URL, session } from "./src/api";
+import { clearOutbox } from "./src/sync";
 import { Mark } from "./src/components/ui";
 import { AppNavigation } from "./src/navigation";
 import { LoginScreen } from "./src/screens/LoginScreen";
@@ -41,6 +43,16 @@ export default function App() {
   }
 
   const logout = async () => {
+    // Fermer la session côté serveur, puis effacer jetons, cache et envois en attente du compte
+    const refreshToken = await AsyncStorage.getItem("sheenu.refresh");
+    if (refreshToken) {
+      await fetch(`${API_URL}/api/v1/auth/logout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      }).catch(() => undefined);
+    }
+    await clearOutbox();
     await session.clear();
     setAuthed(false);
   };

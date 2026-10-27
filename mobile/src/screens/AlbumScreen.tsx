@@ -49,7 +49,9 @@ export function AlbumScreen({ id }: { id: string }) {
         ListHeaderComponent={
           <View style={{ padding: 20, gap: 6 }}>
             <Text style={[s.h1, { fontSize: 24 }]}>{album.title}</Text>
-            <Text style={s.sub}>{[album.year, `${album.photos.length} photo${album.photos.length > 1 ? "s" : ""}`].filter(Boolean).join(", ")}</Text>
+            <Text style={s.sub}>
+              {[album.year, `${album.photos.length} photo${album.photos.length > 1 ? "s" : ""}`].filter(Boolean).join(", ")}
+            </Text>
             {album.description && <Text style={[s.lead, { marginTop: 4 }]}>{album.description}</Text>}
           </View>
         }
@@ -70,7 +72,9 @@ export function AlbumScreen({ id }: { id: string }) {
             <View style={{ padding: 20, gap: 6 }}>
               {open.caption && <Text style={{ fontFamily: fonts.ui, fontSize: 16, color: colors.white }}>{open.caption}</Text>}
               {open.persons.length > 0 && (
-                <Text style={{ fontFamily: fonts.ui, color: "#C9CFE2" }}>Sur la photo : {open.persons.map((p) => p.display_name).join(", ")}</Text>
+                <Text style={{ fontFamily: fonts.ui, color: "#C9CFE2" }}>
+                  Sur la photo : {open.persons.map((p) => p.display_name).join(", ")}
+                </Text>
               )}
               <Text style={{ fontFamily: fonts.ui, fontSize: 12.5, color: "#8D9AC2" }}>
                 {[open.year, `ajoutée par ${open.added_by}`].filter(Boolean).join(", ")}

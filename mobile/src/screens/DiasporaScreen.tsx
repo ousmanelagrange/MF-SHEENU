@@ -17,7 +17,9 @@ export function DiasporaScreen({ onOpenPerson }: { onOpenPerson: (id: string) =>
   useEffect(() => void api<Diaspora>("/diaspora").then(setData), []);
   useEffect(() => {
     if (!open) return setPeople([]);
-    void api<{ items: PersonSummary[] }>("/persons", { query: { country: open, living: "true", limit: 200 } }).then((r) => setPeople(r.items));
+    void api<{ items: PersonSummary[] }>("/persons", { query: { country: open, living: "true", limit: 200 } }).then((r) =>
+      setPeople(r.items),
+    );
   }, [open]);
 
   if (!data) return <ActivityIndicator style={{ marginTop: 40 }} />;
@@ -34,7 +36,15 @@ export function DiasporaScreen({ onOpenPerson }: { onOpenPerson: (id: string) =>
           <Pressable
             onPress={() => setOpen(open === c.country ? null : c.country)}
             style={({ pressed }) => [
-              { flexDirection: "row", alignItems: "center", gap: 12, paddingHorizontal: 20, paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: colors.line },
+              {
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 12,
+                paddingHorizontal: 20,
+                paddingVertical: 12,
+                borderBottomWidth: 1,
+                borderBottomColor: colors.line,
+              },
               (pressed || open === c.country) && { backgroundColor: colors.indigo50 },
             ]}
           >
@@ -42,7 +52,9 @@ export function DiasporaScreen({ onOpenPerson }: { onOpenPerson: (id: string) =>
               {c.country}
             </Text>
             <View style={{ flex: 1 }}>
-              <View style={{ height: 8, borderRadius: 2, backgroundColor: colors.brass, width: `${Math.max(3, (c.count / max) * 100)}%` }} />
+              <View
+                style={{ height: 8, borderRadius: 2, backgroundColor: colors.brass, width: `${Math.max(3, (c.count / max) * 100)}%` }}
+              />
             </View>
             <Text style={{ fontFamily: fonts.ui, color: colors.muted, width: 36, textAlign: "right" }}>{c.count}</Text>
           </Pressable>

@@ -39,9 +39,7 @@ export function LoginScreen({ onLoggedIn }: { onLoggedIn: () => void }) {
             <Text style={{ fontFamily: fonts.name, fontSize: 22, color: colors.indigo900 }}>Sheenu</Text>
           </View>
           <Text style={[s.h1, { marginTop: 40 }]}>Se connecter</Text>
-          <Text style={[s.lead, { marginTop: 6, marginBottom: 28 }]}>
-            Avec l'e-mail ou le numéro de téléphone utilisé à l'inscription.
-          </Text>
+          <Text style={[s.lead, { marginTop: 6, marginBottom: 28 }]}>Avec l'e-mail ou le numéro de téléphone utilisé à l'inscription.</Text>
           {error && <Text style={s.error}>{error}</Text>}
           <Field label="E-mail ou téléphone" value={login} onChangeText={setLogin} autoCapitalize="none" autoComplete="username" />
           <Field label="Mot de passe" value={password} onChangeText={setPassword} secureTextEntry autoComplete="current-password" />

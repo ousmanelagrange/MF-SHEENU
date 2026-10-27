@@ -4,6 +4,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { api } from "../api";
+import { isQueued, send, tellQueued } from "../sync";
 import { Button, Field, PersonRow, s } from "../components/ui";
 import { STATUS_COLORS, STATUS_LABELS, money } from "../money";
 import { colors, fonts } from "../theme";
@@ -39,10 +40,15 @@ export function EventScreen({ id, meId, onOpenPerson }: { id: string; meId: stri
 
   const review = async (p: Payment, action: "validate" | "reject") => {
     try {
-      await api(`/contributions/payments/${p.id}/${action}`, {
+      const r = await send(`/contributions/payments/${p.id}/${action}`, {
         method: "POST",
         body: action === "reject" ? { note: "Paiement non reçu" } : {},
+        label: `${action === "validate" ? "Validation" : "Refus"} du paiement de ${p.person?.display_name ?? "?"}`,
       });
+      if (isQueued(r)) {
+        setPending((list) => list.filter((x) => x.id !== p.id));
+        return tellQueued();
+      }
       void load();
     } catch (e) {
       Alert.alert("Action impossible", (e as Error).message);
@@ -110,7 +116,14 @@ export function EventScreen({ id, meId, onOpenPerson }: { id: string; meId: stri
           <Pressable
             key={f}
             onPress={() => setFilter(f)}
-            style={{ paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, backgroundColor: filter === f ? colors.indigo700 : colors.white, borderWidth: 1, borderColor: filter === f ? colors.indigo700 : colors.line }}
+            style={{
+              paddingHorizontal: 12,
+              paddingVertical: 6,
+              borderRadius: 16,
+              backgroundColor: filter === f ? colors.indigo700 : colors.white,
+              borderWidth: 1,
+              borderColor: filter === f ? colors.indigo700 : colors.line,
+            }}
           >
             <Text style={{ fontFamily: fonts.uiMedium, fontSize: 13, color: filter === f ? colors.white : colors.indigo900 }}>
               {f === "any" ? "Tous" : STATUS_LABELS[f]}
@@ -158,11 +171,19 @@ function PaymentForm({
     if (!personId) return;
     setBusy(true);
     try {
-      const p = await api<Payment>(`/contributions/events/${event.id}/payments`, {
+      const p = await send<Payment>(`/contributions/events/${event.id}/payments`, {
         method: "POST",
         body: { person_id: personId, amount: Number(amount), method, reference: reference || null },
+        label: `Paiement de ${amount} FCFA, ${event.title}`,
       });
-      Alert.alert(p.status === "validated" ? "Paiement enregistré" : "Paiement déclaré", p.status === "validated" ? "" : "Le trésorier va le valider.");
+      if (isQueued(p)) {
+        tellQueued();
+        return onDone();
+      }
+      Alert.alert(
+        p.status === "validated" ? "Paiement enregistré" : "Paiement déclaré",
+        p.status === "validated" ? "" : "Le trésorier va le valider.",
+      );
       onDone();
     } catch (e) {
       Alert.alert("Déclaration impossible", (e as Error).message);
@@ -180,14 +201,29 @@ function PaymentForm({
           <Pressable
             key={value}
             onPress={() => setMethod(value)}
-            style={{ flex: 1, alignItems: "center", paddingVertical: 9, borderRadius: 6, borderWidth: 1, borderColor: method === value ? colors.indigo700 : colors.line, backgroundColor: method === value ? colors.indigo50 : colors.white }}
+            style={{
+              flex: 1,
+              alignItems: "center",
+              paddingVertical: 9,
+              borderRadius: 6,
+              borderWidth: 1,
+              borderColor: method === value ? colors.indigo700 : colors.line,
+              backgroundColor: method === value ? colors.indigo50 : colors.white,
+            }}
           >
             <Text style={{ fontFamily: fonts.uiMedium, fontSize: 13, color: colors.indigo900 }}>{label}</Text>
           </Pressable>
         ))}
       </View>
       <Text style={s.label}>Référence de la transaction</Text>
-      <TextInput value={reference} onChangeText={setReference} style={[s.input, { marginBottom: 16 }]} placeholder="MP261027…" placeholderTextColor={colors.muted} autoCapitalize="characters" />
+      <TextInput
+        value={reference}
+        onChangeText={setReference}
+        style={[s.input, { marginBottom: 16 }]}
+        placeholder="MP261027…"
+        placeholderTextColor={colors.muted}
+        autoCapitalize="characters"
+      />
       <Button title={busy ? "Envoi…" : "Déclarer"} onPress={submit} disabled={busy || !Number(amount)} />
       <Button title="Annuler" kind="ghost" onPress={onCancel} />
     </View>

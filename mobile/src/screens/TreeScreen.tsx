@@ -71,7 +71,11 @@ export function TreeScreen({ onOpen }: { onOpen: (id: string) => void }) {
           onChange={(m) => setMode(m as Mode)}
         />
         <Stepper label={`${depth} gén.`} onMinus={() => setDepth(Math.max(1, depth - 1))} onPlus={() => setDepth(Math.min(8, depth + 1))} />
-        <Stepper label={`${Math.round(zoom * 100)} %`} onMinus={() => setZoom(Math.max(0.4, zoom - 0.15))} onPlus={() => setZoom(Math.min(1.6, zoom + 0.15))} />
+        <Stepper
+          label={`${Math.round(zoom * 100)} %`}
+          onMinus={() => setZoom(Math.max(0.4, zoom - 0.15))}
+          onPlus={() => setZoom(Math.min(1.6, zoom + 0.15))}
+        />
       </View>
       <ScrollView ref={scroller} horizontal contentContainerStyle={{ minWidth: "100%" }}>
         <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
@@ -99,10 +103,26 @@ export function TreeScreen({ onOpen }: { onOpen: (id: string) => void }) {
                 const female = p.sex === "F";
                 return (
                   <G key={p.id} onPress={() => onOpen(p.id)}>
-                    <Rect x={x} y={y} width={CARD_W} height={h} rx={8} fill={p.id === data.me_person_id ? colors.indigo50 : "#fff"} stroke={p.id === focusId ? colors.indigo700 : colors.line} strokeWidth={p.id === focusId ? 2 : 1} />
+                    <Rect
+                      x={x}
+                      y={y}
+                      width={CARD_W}
+                      height={h}
+                      rx={8}
+                      fill={p.id === data.me_person_id ? colors.indigo50 : "#fff"}
+                      stroke={p.id === focusId ? colors.indigo700 : colors.line}
+                      strokeWidth={p.id === focusId ? 2 : 1}
+                    />
                     {title && <Rect x={x} y={y + 10} width={3} height={CARD_H - 20} rx={1.5} fill={title.badge_color} />}
                     <Circle cx={x + 32} cy={y + CARD_H / 2} r={19} fill={female ? "#EFE7EE" : colors.indigo100} />
-                    <SvgText x={x + 32} y={y + CARD_H / 2 + 4.5} fontSize={13} textAnchor="middle" fill={female ? "#6A3B5E" : colors.indigo700} fontFamily={fonts.name}>
+                    <SvgText
+                      x={x + 32}
+                      y={y + CARD_H / 2 + 4.5}
+                      fontSize={13}
+                      textAnchor="middle"
+                      fill={female ? "#6A3B5E" : colors.indigo700}
+                      fontFamily={fonts.name}
+                    >
                       {`${p.first_name?.[0] ?? ""}${p.last_name?.[0] ?? ""}`.toUpperCase()}
                     </SvgText>
                     <SvgText x={x + 60} y={y + 27} fontSize={13.5} fill={colors.indigo900} fontFamily={fonts.name}>
@@ -126,7 +146,14 @@ export function TreeScreen({ onOpen }: { onOpen: (id: string) => void }) {
                         </G>
                       ))}
                     {n.data.hiddenCount > 0 && (
-                      <SvgText x={n.x} y={mode === "descendants" ? y + h + 18 : y - 8} fontSize={11} textAnchor="middle" fill={colors.indigo700} fontFamily={fonts.uiSemi}>
+                      <SvgText
+                        x={n.x}
+                        y={mode === "descendants" ? y + h + 18 : y - 8}
+                        fontSize={11}
+                        textAnchor="middle"
+                        fill={colors.indigo700}
+                        fontFamily={fonts.uiSemi}
+                      >
                         {`+${n.data.hiddenCount}`}
                       </SvgText>
                     )}
@@ -148,7 +175,12 @@ function Toggle({ value, options, onChange }: { value: string; options: [string,
         <Pressable
           key={v}
           onPress={() => onChange(v)}
-          style={{ paddingHorizontal: 12, paddingVertical: 7, borderRadius: 6, backgroundColor: value === v ? colors.white : "transparent" }}
+          style={{
+            paddingHorizontal: 12,
+            paddingVertical: 7,
+            borderRadius: 6,
+            backgroundColor: value === v ? colors.white : "transparent",
+          }}
         >
           <Text style={{ fontFamily: value === v ? fonts.uiSemi : fonts.ui, color: colors.indigo900, fontSize: 14 }}>{label}</Text>
         </Pressable>
@@ -160,7 +192,16 @@ function Toggle({ value, options, onChange }: { value: string; options: [string,
 function Stepper({ label, onMinus, onPlus }: { label: string; onMinus: () => void; onPlus: () => void }) {
   const btn = { paddingHorizontal: 12, paddingVertical: 6 };
   return (
-    <View style={{ flexDirection: "row", alignItems: "center", borderWidth: 1, borderColor: colors.line, borderRadius: 8, backgroundColor: colors.white }}>
+    <View
+      style={{
+        flexDirection: "row",
+        alignItems: "center",
+        borderWidth: 1,
+        borderColor: colors.line,
+        borderRadius: 8,
+        backgroundColor: colors.white,
+      }}
+    >
       <Pressable onPress={onMinus} style={btn} accessibilityLabel="Moins">
         <Text style={s.meta}>−</Text>
       </Pressable>

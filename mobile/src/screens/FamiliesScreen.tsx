@@ -10,7 +10,9 @@ import { ROLE_LABELS, type MyFamily } from "../types";
 export function FamiliesScreen({ onPick, onLogout }: { onPick: (f: MyFamily) => void; onLogout: () => void }) {
   const [items, setItems] = useState<MyFamily[] | null>(null);
   useEffect(() => {
-    api<MyFamily[]>("/families").then(setItems).catch(() => setItems([]));
+    api<MyFamily[]>("/families")
+      .then(setItems)
+      .catch(() => setItems([]));
   }, []);
 
   return (

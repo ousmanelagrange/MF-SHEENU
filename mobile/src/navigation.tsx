@@ -20,6 +20,9 @@ import { FeedScreen } from "./screens/FeedScreen";
 import { MemoryScreen } from "./screens/MemoryScreen";
 import { NarrativeScreen } from "./screens/NarrativeScreen";
 import { NotificationsScreen } from "./screens/NotificationsScreen";
+import { PendingScreen } from "./screens/PendingScreen";
+import { prefetch } from "./offline";
+import { onOutbox, startSync } from "./sync";
 import { PeopleScreen } from "./screens/PeopleScreen";
 import { PersonScreen } from "./screens/PersonScreen";
 import { PostScreen } from "./screens/PostScreen";
@@ -40,6 +43,7 @@ type RootRoutes = {
   Album: { id: string };
   Notifications: undefined;
   Diaspora: undefined;
+  Pending: undefined;
 };
 type Nav = NavigationProp<RootRoutes>;
 
@@ -76,6 +80,15 @@ export function AppNavigation({ onLogout }: { onLogout: () => void }) {
       .catch(() => undefined);
   }, [family]);
   const markRead = useCallback(() => setUnread(0), []);
+  const [waiting, setWaiting] = useState(0);
+
+  // Synchronisation : la file d'envois repart au retour du réseau ; les données de lecture
+  // sont préchargées pour la famille ouverte, pour fonctionner ensuite sans connexion.
+  useEffect(() => startSync(), []);
+  useEffect(() => onOutbox((q) => setWaiting(q.length)), []);
+  useEffect(() => {
+    if (family) void prefetch();
+  }, [family]);
   useEffect(() => {
     refreshCounts();
     const id = setInterval(refreshCounts, 60_000);
@@ -97,7 +110,16 @@ export function AppNavigation({ onLogout }: { onLogout: () => void }) {
           )}
         </Stack.Screen>
         <Stack.Screen name="Main" options={{ headerShown: false }}>
-          {({ navigation }) => <MainTabs family={family} toReview={toReview} unread={unread} nav={navigation as unknown as Nav} onLogout={onLogout} />}
+          {({ navigation }) => (
+            <MainTabs
+              family={family}
+              toReview={toReview}
+              unread={unread}
+              waiting={waiting}
+              nav={navigation as unknown as Nav}
+              onLogout={onLogout}
+            />
+          )}
         </Stack.Screen>
         <Stack.Screen name="Event" options={{ title: "Collecte" }}>
           {({ route, navigation }) => (
@@ -124,6 +146,9 @@ export function AppNavigation({ onLogout }: { onLogout: () => void }) {
         <Stack.Screen name="Notifications" options={{ title: "Notifications" }}>
           {() => <NotificationsScreen onRead={markRead} />}
         </Stack.Screen>
+        <Stack.Screen name="Pending" options={{ title: "Envois en attente" }}>
+          {() => <PendingScreen />}
+        </Stack.Screen>
         <Stack.Screen name="Diaspora" options={{ title: "La famille dans le monde" }}>
           {({ navigation }) => <DiasporaScreen onOpenPerson={(id) => navigation.push("Person", { id })} />}
         </Stack.Screen>
@@ -145,12 +170,14 @@ function MainTabs({
   family,
   toReview,
   unread,
+  waiting,
   nav,
   onLogout,
 }: {
   family: MyFamily | null;
   toReview: number;
   unread: number;
+  waiting: number;
   nav: Nav;
   onLogout: () => void;
 }) {
@@ -183,7 +210,7 @@ function MainTabs({
         name="Plus"
         options={{
           tabBarIcon: MoreIcon,
-          tabBarBadge: toReview + unread > 0 ? toReview + unread : undefined,
+          tabBarBadge: toReview + unread + waiting > 0 ? toReview + unread + waiting : undefined,
           tabBarBadgeStyle: { backgroundColor: colors.brass },
         }}
       >
@@ -193,6 +220,9 @@ function MainTabs({
               {family?.name}, {ROLE_LABELS[family?.role ?? "member"]?.toLowerCase()}
             </Text>
             <MenuRow label="Notifications" count={unread} countLabel="nouvelle(s)" onPress={() => nav.navigate("Notifications")} />
+            {waiting > 0 && (
+              <MenuRow label="Envois en attente" count={waiting} countLabel="à envoyer" onPress={() => nav.navigate("Pending")} />
+            )}
             {family?.person_id && <MenuRow label="Ma fiche" onPress={() => open(family.person_id!)} />}
             <MenuRow label="Mémoire de la famille" onPress={() => nav.navigate("Memory")} />
             <MenuRow label="La famille dans le monde" onPress={() => nav.navigate("Diaspora")} />
@@ -212,7 +242,17 @@ function MainTabs({
   );
 }
 
-function MenuRow({ label, count, countLabel = "à valider", onPress }: { label: string; count?: number; countLabel?: string; onPress: () => void }) {
+function MenuRow({
+  label,
+  count,
+  countLabel = "à valider",
+  onPress,
+}: {
+  label: string;
+  count?: number;
+  countLabel?: string;
+  onPress: () => void;
+}) {
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [s.row, pressed && { backgroundColor: colors.indigo50 }]}>
       <Text style={[s.name, { fontFamily: fonts.uiMedium, fontSize: 16, flex: 1 }]}>{label}</Text>

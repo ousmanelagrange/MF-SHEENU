@@ -100,7 +100,17 @@ export function Field(props: TextInputProps & { label: string }) {
   );
 }
 
-export function Button({ title, onPress, disabled, kind = "primary" }: { title: string; onPress: () => void; disabled?: boolean; kind?: "primary" | "ghost" }) {
+export function Button({
+  title,
+  onPress,
+  disabled,
+  kind = "primary",
+}: {
+  title: string;
+  onPress: () => void;
+  disabled?: boolean;
+  kind?: "primary" | "ghost";
+}) {
   const primary = kind === "primary";
   return (
     <Pressable
@@ -165,7 +175,13 @@ export function Segmented<T extends string>({ value, options, onChange }: { valu
           accessibilityRole="tab"
           accessibilityState={{ selected: value === v }}
           onPress={() => onChange(v)}
-          style={{ flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: 6, backgroundColor: value === v ? colors.white : "transparent" }}
+          style={{
+            flex: 1,
+            alignItems: "center",
+            paddingVertical: 8,
+            borderRadius: 6,
+            backgroundColor: value === v ? colors.white : "transparent",
+          }}
         >
           <Text style={{ fontFamily: value === v ? fonts.uiSemi : fonts.ui, color: colors.indigo900 }}>{label}</Text>
         </Pressable>
