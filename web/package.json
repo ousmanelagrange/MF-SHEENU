@@ -1,0 +1,40 @@
+{
+  "name": "sheenu-web",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -b"
+  },
+  "dependencies": {
+    "@ant-design/icons": "^5.6.1",
+    "@ant-design/v5-patch-for-react-19": "^1.0.3",
+    "@fontsource-variable/literata": "^5.3.0",
+    "@fontsource/instrument-sans": "^5.3.0",
+    "@refinedev/antd": "^6.0.3",
+    "@refinedev/core": "^5.0.12",
+    "@refinedev/react-router": "^2.0.4",
+    "antd": "^5.29.3",
+    "d3-hierarchy": "^3.1.2",
+    "d3-selection": "^3.0.0",
+    "d3-zoom": "^3.0.0",
+    "dayjs": "^1.11.23",
+    "jspdf": "^3.0.4",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "react-router": "^7.18.4"
+  },
+  "devDependencies": {
+    "@types/d3-hierarchy": "^3.1.7",
+    "@types/d3-selection": "^3.0.12",
+    "@types/d3-zoom": "^3.0.9",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^5.2.0",
+    "typescript": "5.9",
+    "vite": "^7.3.7"
+  }
+}

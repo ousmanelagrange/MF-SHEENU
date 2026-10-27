@@ -1,0 +1,26 @@
+# Blueprint Render : API Sheenu (offre gratuite).
+# Render → New → Blueprint → choisir ce dépôt. Renseigner DATABASE_URL (Neon) et les URL publiques.
+services:
+  - type: web
+    name: sheenu-api
+    runtime: docker
+    rootDir: api
+    plan: free
+    region: frankfurt
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ENVIRONMENT
+        value: production
+      - key: CORS_ORIGINS
+        sync: false
+      - key: PUBLIC_WEB_URL
+        sync: false
+      - key: PUBLIC_API_URL
+        sync: false
+      - key: STORAGE_BACKEND
+        value: local

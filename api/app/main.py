@@ -4,8 +4,10 @@ from fastapi import APIRouter, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import text
 
 from app.core.config import get_settings
+from app.core.db import engine
 from app.routers import audit, auth, families, invitations, persons, relations, titles, tree
 
 settings = get_settings()
@@ -39,4 +41,10 @@ if settings.storage_backend == "local":
 
 @app.get("/health", tags=["system"])
 def health() -> dict:
-    return {"status": "ok", "version": app.version}
+    """État du service. `rls_enforced` doit valoir true : un rôle superutilisateur ou
+    BYPASSRLS ignorerait l'isolation des familles (voir docs/04-deploiement.md)."""
+    with engine.connect() as conn:
+        bypass = conn.execute(
+            text("SELECT rolsuper OR rolbypassrls FROM pg_roles WHERE rolname = current_user")
+        ).scalar()
+    return {"status": "ok", "version": app.version, "rls_enforced": not bypass}

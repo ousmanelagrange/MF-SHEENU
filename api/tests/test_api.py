@@ -5,7 +5,9 @@ from tests.conftest import Api, png_bytes
 
 
 def test_health(client):
-    assert client.get("/health").json()["status"] == "ok"
+    h = client.get("/health").json()
+    assert h["status"] == "ok"
+    assert h["rls_enforced"] is True
 
 
 def test_register_login_refresh(client):

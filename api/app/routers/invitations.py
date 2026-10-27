@@ -62,7 +62,7 @@ def create_invitation(body: InvitationCreate, ctx: InviterCtx) -> InvitationCrea
     db.flush()
     audit.record(ctx, "create", "invitation", inv.id, after={"person_id": str(body.person_id)})
     db.commit()
-    link = f"{get_settings().public_web_url.rstrip('/')}/join/{token}"
+    link = f"{get_settings().public_web_url.rstrip('/')}/rejoindre/{token}"
     who = f" {person_name}," if person_name else ""
     share_text = (
         f"Bonjour{who} {ctx.user.full_name} t'invite à rejoindre la famille "

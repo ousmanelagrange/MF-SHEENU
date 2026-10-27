@@ -237,7 +237,7 @@ sequenceDiagram
   actor V as Invité
   CB->>W: Inviter (fiche personne existante ou nouvelle)
   W->>A: POST /invitations
-  A-->>W: lien https://app/join/{token}
+  A-->>W: lien https://app/rejoindre/{token}
   CB->>V: Partage du lien sur WhatsApp
   V->>W: Ouvre le lien
   W->>A: GET /invitations/{token}

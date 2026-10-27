@@ -381,7 +381,7 @@ Base : `/api/v1`. Authentification : `Authorization: Bearer <access_token>`. Con
 | Écran | Route | Contenu |
 |---|---|---|
 | Connexion / inscription | `/login`, `/register` | E-mail ou téléphone, mot de passe |
-| Rejoindre | `/join/:token` | Aperçu de l'invitation, création de compte ou connexion, acceptation |
+| Rejoindre | `/rejoindre/:token` | Aperçu de l'invitation, création de compte ou connexion, acceptation |
 | Choix de famille | `/families` | Mes familles ; créer une famille |
 | Tableau de bord | `/` | Statistiques, raccourcis |
 | Arbre | `/tree` | Arbre interactif centré sur moi, recherche, recentrage, export PNG/PDF, GEDCOM |
