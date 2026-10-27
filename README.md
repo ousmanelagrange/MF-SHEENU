@@ -6,7 +6,7 @@ Plateforme privée de mémoire et d'organisation des grandes familles africaines
 
 | Dossier | Contenu |
 |---|---|
-| [`docs/`](docs) | [Analyse](docs/01-analyse.md), [conception globale](docs/02-conception-globale.md), [conception détaillée](docs/03-conception-detaillee.md), [déploiement](docs/04-deploiement.md), [guide du code](docs/05-guide-du-code.md), [tests et sécurité](docs/07-tests-et-securite.md) |
+| [`docs/`](docs) | [Analyse](docs/01-analyse.md), [conception globale](docs/02-conception-globale.md), [conception détaillée](docs/03-conception-detaillee.md), [déploiement](docs/04-deploiement.md), [guide du code](docs/05-guide-du-code.md), [description fonctionnelle](docs/06-description-fonctionnelle.md), [tests et sécurité](docs/07-tests-et-securite.md) |
 | [`api/`](api) | API FastAPI + PostgreSQL |
 | [`web/`](web) | Application web React + Refine |
 | [`mobile/`](mobile) | Application mobile Expo |
@@ -36,6 +36,10 @@ cd ../web
 npm install
 npm run dev                     # http://localhost:5173
 ```
+
+## Application Android
+
+L'APK se construit sur GitHub, sans compte Expo : onglet **Actions → APK Android → Run workflow** (adresse de l'API en paramètre), ou en poussant une étiquette `v*`, qui publie l'APK dans les **Releases**. Voir `.github/workflows/android-apk.yml`.
 
 ## Avancement
 
