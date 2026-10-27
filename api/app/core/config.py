@@ -32,6 +32,18 @@ class Settings(BaseSettings):
     s3_secret_key: str | None = None
     s3_public_url: str | None = None
 
+    # Messagerie (phase 6) : « share » prépare des liens WhatsApp à ouvrir soi-même (gratuit) ;
+    # « whatsapp_cloud » envoie par l'API WhatsApp Business de Meta (payante, jetons requis).
+    messaging_backend: str = "share"
+    whatsapp_token: str | None = None
+    whatsapp_phone_id: str | None = None
+
+    # Paiement en ligne (phase 6) : « none » (déclaration manuelle seulement) ou « sandbox »
+    # (simulation pour les tests). Un vrai prestataire Mobile Money s'ajoute dans
+    # app/integrations/payments.py ; le secret signe les webhooks.
+    payment_backend: str = "none"
+    payment_webhook_secret: str = "change-me-webhook-secret"
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]

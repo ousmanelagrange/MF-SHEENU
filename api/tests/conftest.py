@@ -14,6 +14,10 @@ from app.core.db import engine  # noqa: E402
 from app.main import app  # noqa: E402
 
 TABLES = [
+    "notification",
+    "join_request",
+    "join_link",
+    "payment_intent",
     "narrative_text",
     "narrative",
     "album_photo",

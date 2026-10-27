@@ -20,6 +20,7 @@ from app.modules.memory.schemas import (
     TextOut,
 )
 from app.shared import audit
+from app.shared.notify import notify
 
 router = APIRouter(tags=["memory"])
 
@@ -135,6 +136,18 @@ def propose_text(narrative_id: UUID, body: TextIn, ctx: Ctx) -> TextOut:
     return service.texts_out(ctx, load_graph(ctx), [version])[0]
 
 
+def _tell_author(ctx, version: NarrativeText, accepted: bool) -> None:  # noqa: ANN001
+    narrative = ctx.db.get(Narrative, version.narrative_id)
+    notify(
+        ctx,
+        [version.author_id],
+        "text_validated" if accepted else "text_rejected",
+        f"Votre texte pour « {narrative.title} » a été {'validé' if accepted else 'refusé'}",
+        link=f"/memoire/recits/{narrative.id}",
+        body=version.review_note,
+    )
+
+
 def _reviewable(ctx, text_id: UUID) -> NarrativeText:  # noqa: ANN001
     if not service.is_curator(ctx):
         raise forbidden("La relecture est réservée aux gardiens de la mémoire.")
@@ -149,6 +162,7 @@ def validate_text(text_id: UUID, body: ReviewIn, ctx: Ctx) -> TextOut:
     version = _reviewable(ctx, text_id)
     service.validate_text(ctx, version, body.note)
     audit.record(ctx, "validate", "narrative_text", version.id, after={"layer": version.layer})
+    _tell_author(ctx, version, accepted=True)
     ctx.db.commit()
     return service.texts_out(ctx, load_graph(ctx), [version])[0]
 
@@ -157,5 +171,6 @@ def validate_text(text_id: UUID, body: ReviewIn, ctx: Ctx) -> TextOut:
 def reject_text(text_id: UUID, body: ReviewIn, ctx: Ctx) -> TextOut:
     version = _reviewable(ctx, text_id)
     service.reject_text(ctx, version, body.note)
+    _tell_author(ctx, version, accepted=False)
     ctx.db.commit()
     return service.texts_out(ctx, load_graph(ctx), [version])[0]

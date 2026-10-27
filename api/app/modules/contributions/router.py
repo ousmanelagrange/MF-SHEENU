@@ -44,6 +44,7 @@ from app.modules.contributions.schemas import (
 )
 from app.shared import audit, storage
 from app.shared.http import attachment
+from app.shared.notify import notify
 
 router = APIRouter(prefix="/contributions", tags=["contributions"])
 
@@ -348,6 +349,15 @@ def review(ctx: FamilyContext, payment_id: UUID, status: str, body: ReviewIn) ->
     payment.reviewed_by = ctx.user.id
     payment.reviewed_at = datetime.now(UTC)
     audit.record(ctx, status, "contribution_payment", payment.id, before, audit.snapshot(payment))
+    validated = status == PaymentStatus.VALIDATED
+    notify(
+        ctx,
+        [payment.declared_by],
+        "payment_validated" if validated else "payment_rejected",
+        f"Paiement {'validé' if validated else 'refusé'} par le trésorier",
+        link=f"/cotisations/{payment.event_id}",
+        body=body.note,
+    )
     ctx.db.commit()
     return payment_out(payment, load_graph(ctx), {}, True)
 

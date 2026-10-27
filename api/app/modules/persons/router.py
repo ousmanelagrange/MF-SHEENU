@@ -27,11 +27,19 @@ def list_persons(
     q: str | None = None,
     sort: str = Query("precedence", pattern="^(precedence|name|generation)$"),
     living: bool | None = None,
+    country: str | None = None,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=1000),
 ) -> PersonList:
     graph = load_graph(ctx)
     ids = list(graph.persons)
+    if country:  # carte de la diaspora : même regroupement que /diaspora
+        wanted = " ".join(country.split()).casefold()
+        ids = [
+            pid
+            for pid in ids
+            if " ".join((graph.persons[pid].country or "").split()).casefold() == wanted
+        ]
     if q:
         needle = q.lower().strip()
         ids = [

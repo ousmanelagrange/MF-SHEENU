@@ -14,6 +14,7 @@ from app.models import Proposal, ProposalStatus, User
 from app.modules.proposals import service
 from app.modules.proposals.schemas import ProposalCounts, ProposalCreate, ProposalOut, ReviewIn
 from app.shared import audit
+from app.shared.notify import notify
 
 router = APIRouter(prefix="/proposals", tags=["proposals"])
 
@@ -109,6 +110,15 @@ def close(ctx: FamilyContext, p: Proposal, status: str, note: str | None) -> Non
     p.reviewer_id = ctx.user.id
     p.review_note = note
     p.reviewed_at = datetime.now(UTC)
+    accepted = status == ProposalStatus.ACCEPTED
+    notify(
+        ctx,
+        [p.author_id],
+        "proposal_accepted" if accepted else "proposal_rejected",
+        f"Proposition {'acceptée' if accepted else 'refusée'} : {p.summary}",
+        link="/propositions",
+        body=note,
+    )
 
 
 @router.post("/{proposal_id}/accept", response_model=ProposalOut)

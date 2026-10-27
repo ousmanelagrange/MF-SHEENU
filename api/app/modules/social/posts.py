@@ -21,6 +21,7 @@ from app.modules.social.schemas import (
     ReactionIn,
     VoteIn,
 )
+from app.shared.notify import members, notify
 
 router = APIRouter(tags=["social"])
 
@@ -86,6 +87,12 @@ def create_post(body: PostIn, ctx: Ctx) -> PostOut:
             PollOption(family_id=ctx.family.id, post_id=post.id, label=label, position=i)
             for i, label in enumerate(labels)
         )
+    if body.kind in (PostKind.ANNOUNCEMENT, PostKind.LIFE_EVENT):
+        # Annonces du bureau et annonces de vie (naissance, décès…) : toute la famille est prévenue
+        title = (
+            "Annonce du bureau" if body.kind == PostKind.ANNOUNCEMENT else "Nouvelle de la famille"
+        )
+        notify(ctx, members(ctx), body.kind, title, link="/fil", body=post.text[:200])
     ctx.db.commit()
     return service.posts_out(ctx, graph, [post])[0]
 
@@ -206,11 +213,19 @@ def list_comments(post_id: UUID, ctx: Ctx) -> list[CommentOut]:
 
 @router.post("/posts/{post_id}/comments", response_model=CommentOut, status_code=201)
 def add_comment(post_id: UUID, body: CommentIn, ctx: Ctx) -> CommentOut:
-    service.get_post(ctx, post_id)
+    post = service.get_post(ctx, post_id)
     comment = Comment(
         family_id=ctx.family.id, post_id=post_id, author_id=ctx.user.id, text=body.text.strip()
     )
     ctx.db.add(comment)
+    notify(
+        ctx,
+        [post.author_id],
+        "comment",
+        f"{ctx.user.full_name} a commenté votre publication",
+        link="/fil",
+        body=comment.text[:200],
+    )
     ctx.db.commit()
     author = service.authors(ctx, load_graph(ctx), {ctx.user.id})[ctx.user.id]
     return CommentOut(

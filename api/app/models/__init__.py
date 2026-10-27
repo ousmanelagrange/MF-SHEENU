@@ -12,6 +12,7 @@ from app.models.contribution import (
 from app.models.delegation import Delegation
 from app.models.family import Family, Membership, Role
 from app.models.family_merge import FamilyMerge
+from app.models.integration import JoinLink, JoinRequest, JoinStatus, Notification, PaymentIntent
 from app.models.invitation import Invitation
 from app.models.memory import Album, AlbumPhoto, Layer, Narrative, NarrativeText, TextStatus
 from app.models.person import Person
@@ -57,6 +58,8 @@ RLS_TABLES = (
     "narrative_text",
     "album",
     "album_photo",
+    "notification",
+    "join_request",
 )
 
 __all__ = [
@@ -96,5 +99,10 @@ __all__ = [
     "TextStatus",
     "Album",
     "AlbumPhoto",
+    "Notification",
+    "JoinLink",
+    "JoinRequest",
+    "JoinStatus",
+    "PaymentIntent",
     "RLS_TABLES",
 ]
