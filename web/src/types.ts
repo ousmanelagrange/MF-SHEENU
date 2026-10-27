@@ -295,3 +295,75 @@ export interface Birthday {
   age: number | null;
   in_days: number;
 }
+
+// ---------- Mémoire (phase 5) ----------
+
+export type LayerName = "original" | "fr" | "en";
+
+export interface NarrativeTextVersion {
+  id: string;
+  layer: LayerName;
+  text: string;
+  author: Author;
+  status: "pending" | "validated" | "superseded" | "rejected";
+  review_note: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+}
+
+export interface NarrativeCard {
+  id: string;
+  title: string;
+  language: string | null;
+  teller: PersonSummary | null;
+  media_kind: "audio" | "video" | null;
+  year: number | null;
+  era: string | null;
+  layers: LayerName[];
+  pending: number;
+  created_at: string;
+}
+
+export interface Narrative extends NarrativeCard {
+  media_url: string | null;
+  place: string | null;
+  persons: PersonSummary[];
+  recorded_by: Author;
+  texts: Record<LayerName, { validated: NarrativeTextVersion | null; pending: number }>;
+  can_edit: boolean;
+  can_review: boolean;
+}
+
+export interface AlbumCard {
+  id: string;
+  title: string;
+  description: string | null;
+  year: number | null;
+  count: number;
+  cover_url: string | null;
+}
+
+export interface AlbumPhoto {
+  id: string;
+  album_id: string;
+  url: string;
+  caption: string | null;
+  year: number | null;
+  persons: PersonSummary[];
+  added_by: string;
+  can_edit: boolean;
+}
+
+export interface Album extends AlbumCard {
+  photos: AlbumPhoto[];
+  can_edit: boolean;
+}
+
+export interface TimelineItem {
+  year: number;
+  day: string | null;
+  kind: "birth" | "death" | "union" | "narrative" | "album" | "photo" | "life_event";
+  title: string;
+  person: PersonSummary | null;
+  ref_id: string | null;
+}

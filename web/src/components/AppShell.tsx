@@ -3,6 +3,7 @@
 import {
   ApartmentOutlined,
   AuditOutlined,
+  BookOutlined,
   CheckSquareOutlined,
   DatabaseOutlined,
   CrownOutlined,
@@ -49,6 +50,7 @@ export function AppShell() {
     { key: "/arbre", icon: <ApartmentOutlined />, label: "Arbre" },
     { key: "/personnes", icon: <TeamOutlined />, label: "Personnes" },
     { key: "/parente", icon: <NodeIndexOutlined />, label: "Lien de parenté" },
+    { key: "/memoire", icon: <BookOutlined />, label: "Mémoire" },
     { key: "/cotisations", icon: <WalletOutlined />, label: "Cotisations" },
     {
       key: "/propositions",

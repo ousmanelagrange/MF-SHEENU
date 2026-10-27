@@ -26,6 +26,11 @@ import { ScalesPage } from "./features/contributions/ScalesPage";
 import { DataPage } from "./features/data/DataPage";
 import { MergeJoinPage } from "./features/family-merge/MergeJoinPage";
 import { ProposalsPage } from "./features/proposals/ProposalsPage";
+import { AlbumPage } from "./features/memory/AlbumPage";
+import { AlbumsPage } from "./features/memory/AlbumsPage";
+import { NarrativePage } from "./features/memory/NarrativePage";
+import { NarrativesPage } from "./features/memory/NarrativesPage";
+import { TimelinePage } from "./features/memory/TimelinePage";
 import { FeedPage } from "./features/social/FeedPage";
 import { ModerationPage } from "./features/social/ModerationPage";
 import { TreePage } from "./features/tree/TreePage";
@@ -71,6 +76,11 @@ export default function App() {
                     <Route index element={<HomePage />} />
                     <Route path="/fil" element={<FeedPage />} />
                     <Route path="/moderation" element={<ModerationPage />} />
+                    <Route path="/memoire" element={<NarrativesPage />} />
+                    <Route path="/memoire/recits/:id" element={<NarrativePage />} />
+                    <Route path="/memoire/albums" element={<AlbumsPage />} />
+                    <Route path="/memoire/albums/:id" element={<AlbumPage />} />
+                    <Route path="/memoire/frise" element={<TimelinePage />} />
                     <Route path="/arbre" element={<TreePage />} />
                     <Route path="/personnes" element={<PersonsPage />} />
                     <Route path="/personnes/nouvelle" element={<PersonFormPage />} />

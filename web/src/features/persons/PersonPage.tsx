@@ -14,6 +14,7 @@ import { GrantTitleModal } from "./components/GrantTitleModal";
 import { KinGroup, KinItem } from "./components/KinList";
 import { ProfileAside } from "./components/ProfileAside";
 import { ContributionHistory } from "../contributions/components/ContributionHistory";
+import { PersonMemory } from "../memory/components/PersonMemory";
 import { Memorial } from "../social/components/Memorial";
 
 const LINK_KIND: Record<string, string> = { biological: "", adoptive: "adoptif", recognized: "reconnu" };
@@ -183,6 +184,8 @@ export function PersonPage() {
               ))}
             </KinGroup>
           )}
+
+          <PersonMemory personId={p.id} />
 
           {!p.is_living && <Memorial personId={p.id} firstName={p.first_name} />}
 
