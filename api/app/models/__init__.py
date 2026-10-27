@@ -16,6 +16,17 @@ from app.models.invitation import Invitation
 from app.models.person import Person
 from app.models.proposal import Proposal, ProposalStatus
 from app.models.relation import FamilyUnion, ParentChild
+from app.models.social import (
+    Comment,
+    MemorialMessage,
+    PollOption,
+    PollVote,
+    Post,
+    PostKind,
+    Reaction,
+    Report,
+    Story,
+)
 from app.models.title import TitleDefinition, TitleHolding
 from app.models.user import User
 
@@ -33,6 +44,14 @@ RLS_TABLES = (
     "contribution_event",
     "contribution_due",
     "contribution_payment",
+    "post",
+    "poll_option",
+    "poll_vote",
+    "comment",
+    "reaction",
+    "story",
+    "report",
+    "memorial_message",
 )
 
 __all__ = [
@@ -57,5 +76,14 @@ __all__ = [
     "ContributionPayment",
     "EventStatus",
     "PaymentStatus",
+    "Post",
+    "PostKind",
+    "PollOption",
+    "PollVote",
+    "Comment",
+    "Reaction",
+    "Story",
+    "Report",
+    "MemorialMessage",
     "RLS_TABLES",
 ]

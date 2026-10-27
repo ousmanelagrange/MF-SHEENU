@@ -14,6 +14,14 @@ from app.core.db import engine  # noqa: E402
 from app.main import app  # noqa: E402
 
 TABLES = [
+    "memorial_message",
+    "report",
+    "reaction",
+    "poll_vote",
+    "poll_option",
+    "comment",
+    "story",
+    "post",
     "contribution_payment",
     "contribution_due",
     "contribution_event",
@@ -72,6 +80,9 @@ class Api:
 
     def post(self, path, json=None, **kw):
         return self.c.post(f"/api/v1{path}", json=json, headers=self.h, **kw)
+
+    def put(self, path, json=None):
+        return self.c.put(f"/api/v1{path}", json=json, headers=self.h)
 
     def patch(self, path, json=None):
         return self.c.patch(f"/api/v1{path}", json=json, headers=self.h)

@@ -21,8 +21,10 @@ from app.modules.invitations.router import router as invitations_router
 from app.modules.persons.router import router as persons_router
 from app.modules.proposals.router import router as proposals_router
 from app.modules.relations.router import router as relations_router
+from app.modules.social.router import router as social_router
 from app.modules.titles.router import router as titles_router
 from app.modules.tree.router import router as tree_router
+from app.modules.uploads.router import router as uploads_router
 
 settings = get_settings()
 
@@ -57,6 +59,8 @@ for module_router in (
     data_router,
     contributions_router,
     family_merges_router,
+    uploads_router,
+    social_router,
 ):
     api.include_router(module_router)
 app.include_router(api)
