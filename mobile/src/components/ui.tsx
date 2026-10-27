@@ -1,3 +1,5 @@
+// Briques d'interface mobiles : marque ntienya, portrait, badge de titre, ligne de personne, champ, bouton.
+
 import { Image, Pressable, StyleSheet, Text, TextInput, View, type TextInputProps } from "react-native";
 import Svg, { Path, Rect } from "react-native-svg";
 import { colors, fonts } from "../theme";

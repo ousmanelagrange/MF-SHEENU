@@ -1,3 +1,5 @@
+// Liste des personnes par préséance, avec recherche et chargement progressif.
+
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ActivityIndicator, FlatList, TextInput, View } from "react-native";
 import { api } from "../api";

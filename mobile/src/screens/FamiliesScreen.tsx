@@ -1,3 +1,5 @@
+// Choix de la famille à ouvrir (deux au plus par compte).
+
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from "react-native";
 import { api, session } from "../api";

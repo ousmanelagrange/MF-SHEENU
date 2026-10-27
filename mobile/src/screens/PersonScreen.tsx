@@ -1,3 +1,5 @@
+// Fiche d'une personne : identité, lien avec moi, histoire, parents, conjoints, enfants, fratrie.
+
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Linking, Pressable, ScrollView, Text, View } from "react-native";
 import { api, session } from "../api";

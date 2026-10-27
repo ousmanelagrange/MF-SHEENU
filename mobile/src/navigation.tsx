@@ -1,0 +1,126 @@
+// Navigation une fois connecté : choix de la famille, puis quatre onglets
+// (Personnes, Arbre, Propositions, Moi). Une fiche s'ouvre par-dessus les onglets.
+
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import { DefaultTheme, NavigationContainer, type NavigationProp } from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { useEffect, useState } from "react";
+import { Platform, Pressable, ScrollView, Text } from "react-native";
+import { api, session } from "./api";
+import { CheckIcon, MeIcon, PeopleIcon, TreeIcon } from "./components/icons";
+import { s } from "./components/ui";
+import { FamiliesScreen } from "./screens/FamiliesScreen";
+import { PeopleScreen } from "./screens/PeopleScreen";
+import { PersonScreen } from "./screens/PersonScreen";
+import { ProposalsScreen } from "./screens/ProposalsScreen";
+import { TreeScreen } from "./screens/TreeScreen";
+import { colors, fonts } from "./theme";
+import { ROLE_LABELS, type MyFamily } from "./types";
+
+type RootRoutes = { Families: undefined; Main: undefined; Person: { id: string } };
+type Nav = NavigationProp<RootRoutes>;
+
+const Stack = createNativeStackNavigator<RootRoutes>();
+const Tabs = createBottomTabNavigator();
+
+const theme = {
+  ...DefaultTheme,
+  colors: { ...DefaultTheme.colors, primary: colors.indigo700, background: colors.cotton, card: colors.white, text: colors.indigo900, border: colors.line },
+};
+const headerTitleStyle = { fontFamily: fonts.name, fontSize: 18, color: colors.indigo900 };
+
+export function AppNavigation({ onLogout }: { onLogout: () => void }) {
+  const [family, setFamily] = useState<MyFamily | null>(null);
+  const [toReview, setToReview] = useState(0);
+
+  useEffect(() => {
+    if (!family) return;
+    api<{ to_review: number }>("/proposals/counts")
+      .then((c) => setToReview(c.to_review))
+      .catch(() => undefined);
+  }, [family]);
+
+  return (
+    <NavigationContainer theme={theme}>
+      <Stack.Navigator screenOptions={{ headerTitleStyle, headerTintColor: colors.indigo700, headerShadowVisible: false }}>
+        <Stack.Screen name="Families" options={{ title: "Vos familles" }}>
+          {({ navigation }) => (
+            <FamiliesScreen
+              onLogout={onLogout}
+              onPick={(f) => {
+                setFamily(f);
+                navigation.navigate("Main");
+              }}
+            />
+          )}
+        </Stack.Screen>
+        <Stack.Screen name="Main" options={{ headerShown: false }}>
+          {({ navigation }) => (
+            <MainTabs family={family} toReview={toReview} nav={navigation as unknown as Nav} onLogout={onLogout} />
+          )}
+        </Stack.Screen>
+        <Stack.Screen name="Person" options={{ title: "" }}>
+          {({ route, navigation }) => (
+            <PersonScreen id={route.params.id} meId={family?.person_id ?? null} onOpen={(id) => navigation.push("Person", { id })} />
+          )}
+        </Stack.Screen>
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
+
+function MainTabs({ family, toReview, nav, onLogout }: { family: MyFamily | null; toReview: number; nav: Nav; onLogout: () => void }) {
+  const open = (id: string) => nav.navigate("Person", { id });
+  return (
+    <Tabs.Navigator
+      screenOptions={{
+        headerTitleStyle,
+        headerShadowVisible: false,
+        tabBarActiveTintColor: colors.indigo700,
+        tabBarInactiveTintColor: colors.muted,
+        tabBarLabelStyle: { fontFamily: fonts.uiMedium, fontSize: 11.5, lineHeight: 15 },
+        // Sur le web (pas de zone de sécurité en bas), on laisse de la place aux libellés.
+        tabBarStyle: Platform.OS === "web" ? { height: 62, paddingBottom: 8 } : undefined,
+      }}
+    >
+      <Tabs.Screen name="Personnes" options={{ title: family?.name ?? "Personnes", tabBarLabel: "Personnes", tabBarIcon: PeopleIcon }}>
+        {() => <PeopleScreen onOpen={open} />}
+      </Tabs.Screen>
+      <Tabs.Screen name="Arbre" options={{ tabBarIcon: TreeIcon }}>
+        {() => <TreeScreen onOpen={open} />}
+      </Tabs.Screen>
+      <Tabs.Screen
+        name="Propositions"
+        options={{ tabBarIcon: CheckIcon, tabBarBadge: toReview > 0 ? toReview : undefined, tabBarBadgeStyle: { backgroundColor: colors.brass } }}
+      >
+        {() => <ProposalsScreen />}
+      </Tabs.Screen>
+      <Tabs.Screen name="Moi" options={{ tabBarIcon: MeIcon }}>
+        {() => (
+          <ScrollView style={{ backgroundColor: colors.cotton }}>
+            <Text style={[s.lead, { padding: 20 }]}>
+              {family?.name}, {ROLE_LABELS[family?.role ?? "member"]?.toLowerCase()}
+            </Text>
+            {family?.person_id && <MenuRow label="Ma fiche" onPress={() => open(family.person_id!)} />}
+            <MenuRow
+              label="Changer de famille"
+              onPress={async () => {
+                await session.setFamily(null);
+                nav.navigate("Families");
+              }}
+            />
+            <MenuRow label="Se déconnecter" onPress={onLogout} />
+          </ScrollView>
+        )}
+      </Tabs.Screen>
+    </Tabs.Navigator>
+  );
+}
+
+function MenuRow({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => [s.row, pressed && { backgroundColor: colors.indigo50 }]}>
+      <Text style={[s.name, { fontFamily: fonts.uiMedium, fontSize: 16 }]}>{label}</Text>
+    </Pressable>
+  );
+}

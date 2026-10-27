@@ -1,3 +1,5 @@
+// Écran de connexion (e-mail ou téléphone, mot de passe).
+
 import { useState } from "react";
 import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";

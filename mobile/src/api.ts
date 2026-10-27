@@ -1,3 +1,5 @@
+// Client HTTP mobile : jetons conservés sur l'appareil, rafraîchissement automatique, famille courante.
+
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // En développement sur téléphone, remplacez par l'adresse IP de votre ordinateur.
