@@ -22,7 +22,6 @@ from app.shared import audit
 router = APIRouter(tags=["families"])
 
 
-
 @router.get("/families", response_model=list[MyFamilyOut])
 def my_families(user: CurrentUser, db: DB) -> list[MyFamilyOut]:
     rows = db.execute(

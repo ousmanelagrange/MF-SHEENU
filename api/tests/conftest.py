@@ -14,6 +14,10 @@ from app.core.db import engine  # noqa: E402
 from app.main import app  # noqa: E402
 
 TABLES = [
+    "contribution_payment",
+    "contribution_due",
+    "contribution_event",
+    "contribution_scale",
     "delegation",
     "proposal",
     "audit_log",

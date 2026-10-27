@@ -13,6 +13,7 @@ from app.modules.data import service
 from app.modules.data.gedcom_export import export_gedcom
 from app.modules.persons.presenters import person_detail
 from app.modules.persons.schemas import PersonDetail, PersonSummary
+from app.shared.http import attachment
 
 router = APIRouter(tags=["data"])
 
@@ -38,11 +39,10 @@ class MergeIn(BaseModel):
 def gedcom_export(ctx: Ctx) -> PlainTextResponse:
     """Fichier .ged de toute la famille (dates des vivants réservées à l'administrateur)."""
     content = export_gedcom(load_graph(ctx), ctx.family.name, include_living_dates=ctx.is_admin)
-    safe = "".join(ch for ch in ctx.family.name if ch.isalnum() or ch in " -_").strip() or "famille"
     return PlainTextResponse(
         content,
         media_type="text/plain; charset=utf-8",
-        headers={"Content-Disposition": f'attachment; filename="{safe}.ged"'},
+        headers={"Content-Disposition": attachment(f"{ctx.family.name}.ged")},
     )
 
 

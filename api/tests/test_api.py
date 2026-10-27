@@ -222,6 +222,7 @@ def test_no_limit_on_families(client):
     assert len(families) == 4
     assert {f["role"] for f in families} == {"admin"}
 
+
 def test_contact_visibility(client, api):
     ids = build_family(api)
     api.patch(f"/persons/{ids['b']}", {"phone": "+237600000000", "contact_visibility": "board"})

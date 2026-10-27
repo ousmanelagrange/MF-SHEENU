@@ -1,6 +1,14 @@
 """Modèles SQLAlchemy, un fichier par domaine. Ce paquet les réexporte tous."""
 
 from app.models.audit import AuditLog
+from app.models.contribution import (
+    ContributionDue,
+    ContributionEvent,
+    ContributionPayment,
+    ContributionScale,
+    EventStatus,
+    PaymentStatus,
+)
 from app.models.delegation import Delegation
 from app.models.family import Family, Membership, Role
 from app.models.invitation import Invitation
@@ -20,6 +28,10 @@ RLS_TABLES = (
     "audit_log",
     "proposal",
     "delegation",
+    "contribution_scale",
+    "contribution_event",
+    "contribution_due",
+    "contribution_payment",
 )
 
 __all__ = [
@@ -37,5 +49,11 @@ __all__ = [
     "Proposal",
     "ProposalStatus",
     "Delegation",
+    "ContributionScale",
+    "ContributionEvent",
+    "ContributionDue",
+    "ContributionPayment",
+    "EventStatus",
+    "PaymentStatus",
     "RLS_TABLES",
 ]

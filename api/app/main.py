@@ -12,6 +12,7 @@ from app.core.config import get_settings
 from app.core.db import engine
 from app.modules.audit.router import router as audit_router
 from app.modules.auth.router import router as auth_router
+from app.modules.contributions.router import router as contributions_router
 from app.modules.data.router import router as data_router
 from app.modules.delegations.router import router as delegations_router
 from app.modules.families.router import router as families_router
@@ -53,6 +54,7 @@ for module_router in (
     proposals_router,
     delegations_router,
     data_router,
+    contributions_router,
 ):
     api.include_router(module_router)
 app.include_router(api)
