@@ -1,6 +1,6 @@
 import pytest
 
-from app.services.kinship_labels import blood_label, spouse_label
+from app.genealogy.kinship import blood_label, spouse_label
 
 
 @pytest.mark.parametrize(

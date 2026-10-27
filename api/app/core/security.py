@@ -1,3 +1,5 @@
+"""Mots de passe (bcrypt), jetons JWT et jetons d'invitation."""
+
 import hashlib
 import secrets
 from datetime import UTC, datetime, timedelta

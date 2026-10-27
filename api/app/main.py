@@ -1,3 +1,5 @@
+"""Point d'entrée de l'API : assemble les modules, configure CORS et la compression."""
+
 from pathlib import Path
 
 from fastapi import APIRouter, FastAPI
@@ -8,7 +10,14 @@ from sqlalchemy import text
 
 from app.core.config import get_settings
 from app.core.db import engine
-from app.routers import audit, auth, families, invitations, persons, relations, titles, tree
+from app.modules.audit.router import router as audit_router
+from app.modules.auth.router import router as auth_router
+from app.modules.families.router import router as families_router
+from app.modules.invitations.router import router as invitations_router
+from app.modules.persons.router import router as persons_router
+from app.modules.relations.router import router as relations_router
+from app.modules.titles.router import router as titles_router
+from app.modules.tree.router import router as tree_router
 
 settings = get_settings()
 
@@ -29,8 +38,17 @@ app.add_middleware(
 )
 
 api = APIRouter(prefix="/api/v1")
-for module in (auth, families, invitations, persons, relations, tree, titles, audit):
-    api.include_router(module.router)
+for module_router in (
+    auth_router,
+    families_router,
+    invitations_router,
+    persons_router,
+    relations_router,
+    tree_router,
+    titles_router,
+    audit_router,
+):
+    api.include_router(module_router)
 app.include_router(api)
 
 if settings.storage_backend == "local":

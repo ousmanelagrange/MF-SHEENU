@@ -1,9 +1,11 @@
+"""Route du journal d'audit, réservée aux administrateurs (RG-15)."""
+
 from fastapi import APIRouter, Query
 from sqlalchemy import func, select
 
-from app.deps import AdminCtx
+from app.core.deps import AdminCtx
 from app.models import AuditLog, User
-from app.schemas import AuditList, AuditOut
+from app.modules.audit.schemas import AuditList, AuditOut
 
 router = APIRouter(tags=["audit"])
 

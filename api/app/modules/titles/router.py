@@ -1,12 +1,14 @@
+"""Routes des titres : catalogue de la famille et attribution aux personnes (RG-17 à RG-19)."""
+
 from uuid import UUID
 
 from fastapi import APIRouter
 from sqlalchemy import select
 
+from app.core.deps import AdminCtx, Ctx
 from app.core.errors import conflict, not_found
-from app.deps import AdminCtx, Ctx
 from app.models import Person, TitleDefinition, TitleHolding
-from app.schemas import (
+from app.modules.titles.schemas import (
     TitleCreate,
     TitleHoldingCreate,
     TitleHoldingOut,
@@ -14,7 +16,7 @@ from app.schemas import (
     TitleOut,
     TitleUpdate,
 )
-from app.services import audit
+from app.shared import audit
 
 router = APIRouter(tags=["titles"])
 

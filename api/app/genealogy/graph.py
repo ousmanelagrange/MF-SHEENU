@@ -14,6 +14,7 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.genealogy.kinship import blood_label, spouse_label
 from app.models import (
     FamilyUnion,
     Membership,
@@ -23,8 +24,7 @@ from app.models import (
     TitleDefinition,
     TitleHolding,
 )
-from app.schemas import PersonSummary, TitleBadge
-from app.services.kinship_labels import blood_label, spouse_label
+from app.modules.persons.schemas import PersonSummary, TitleBadge
 
 INF = 10**9
 
@@ -389,3 +389,8 @@ class FamilyGraph:
                 }
 
         return {"related": False, "label": None, "relation_type": "none", "path": []}
+
+
+def load_graph(ctx) -> FamilyGraph:  # noqa: ANN001  (FamilyContext, import évité pour rester découplé)
+    """Charge le graphe de la famille courante d'une requête."""
+    return FamilyGraph.load(ctx.db, ctx.family.id, ctx.family.root_person_id)

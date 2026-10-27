@@ -1,3 +1,5 @@
+"""Erreurs métier renvoyées au client sous la forme {code, message} (docs/03 §3.1)."""
+
 from fastapi import HTTPException
 
 

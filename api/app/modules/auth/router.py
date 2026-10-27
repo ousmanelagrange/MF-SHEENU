@@ -1,9 +1,17 @@
+"""Routes d'authentification : inscription, connexion, jetons, profil du compte.
+
+Un compte se connecte avec son e-mail ou son téléphone. Les jetons d'accès durent
+30 minutes ; le jeton de rafraîchissement permet d'en obtenir un nouveau sans ressaisir
+le mot de passe. « Se déconnecter partout » invalide tous les jetons existants.
+"""
+
 from uuid import UUID
 
 import jwt
 from fastapi import APIRouter
 from sqlalchemy import or_, select
 
+from app.core.deps import DB, CurrentUser
 from app.core.errors import AppError, conflict
 from app.core.security import (
     create_access_token,
@@ -12,9 +20,8 @@ from app.core.security import (
     hash_password,
     verify_password,
 )
-from app.deps import DB, CurrentUser
 from app.models import User
-from app.schemas import LoginIn, RefreshIn, RegisterIn, TokenOut, UserOut, UserUpdate
+from app.modules.auth.schemas import LoginIn, RefreshIn, RegisterIn, TokenOut, UserOut, UserUpdate
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 

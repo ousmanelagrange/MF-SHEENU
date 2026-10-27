@@ -1,3 +1,5 @@
+"""Routes de l'arbre : arbre complet, lien de parenté entre deux personnes, statistiques."""
+
 from collections import Counter
 from uuid import UUID
 
@@ -5,12 +7,13 @@ from fastapi import APIRouter, Query
 from fastapi.responses import PlainTextResponse
 from sqlalchemy import func, select
 
+from app.core.deps import Ctx
 from app.core.errors import not_found
-from app.deps import Ctx
+from app.genealogy.graph import load_graph
 from app.models import Membership
-from app.routers.persons import load_graph
-from app.schemas import KinshipOut, ParentChildOut, StatsOut, TreeOut, UnionOut
-from app.services.gedcom import export_gedcom
+from app.modules.data.gedcom_export import export_gedcom
+from app.modules.relations.schemas import ParentChildOut, UnionOut
+from app.modules.tree.schemas import KinshipOut, StatsOut, TreeOut
 
 router = APIRouter(tags=["tree"])
 

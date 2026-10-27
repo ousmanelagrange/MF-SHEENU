@@ -3,7 +3,7 @@
 from datetime import date
 from uuid import UUID
 
-from app.services.graph import FamilyGraph
+from app.genealogy.graph import FamilyGraph
 
 _MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"]
 

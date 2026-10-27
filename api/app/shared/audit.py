@@ -1,9 +1,11 @@
+"""Écriture du journal d'audit (RG-15) : qui, quoi, quand, valeurs avant et après."""
+
 from datetime import date, datetime
 from uuid import UUID
 
 from sqlalchemy import inspect
 
-from app.deps import FamilyContext
+from app.core.deps import FamilyContext
 from app.models import AuditLog
 
 _SKIP = {"password_hash", "token_hash"}

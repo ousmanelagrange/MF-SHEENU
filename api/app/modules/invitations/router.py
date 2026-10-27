@@ -1,3 +1,9 @@
+"""Routes des invitations : création, aperçu public, acceptation (RG-04).
+
+Le jeton clair n'est renvoyé qu'une fois, à la création ; seule son empreinte SHA-256
+est stockée. Un lien sert une seule fois et expire (7 jours par défaut).
+"""
+
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
@@ -6,20 +12,20 @@ from sqlalchemy import select
 
 from app.core.config import get_settings
 from app.core.db import set_family_context
+from app.core.deps import DB, CurrentUser, FamilyContext, InviterCtx
 from app.core.errors import bad_request, conflict, forbidden, not_found
 from app.core.security import hash_token, new_invitation_token
-from app.deps import DB, CurrentUser, FamilyContext, InviterCtx
+from app.genealogy.graph import FamilyGraph
 from app.models import Family, Invitation, Membership, Person, Role, User
-from app.routers.families import count_memberships
-from app.schemas import (
+from app.modules.families.router import count_memberships
+from app.modules.families.schemas import MyFamilyOut
+from app.modules.invitations.schemas import (
     InvitationCreate,
     InvitationCreated,
     InvitationOut,
     InvitationPreview,
-    MyFamilyOut,
 )
-from app.services import audit
-from app.services.graph import FamilyGraph
+from app.shared import audit
 
 router = APIRouter(prefix="/invitations", tags=["invitations"])
 

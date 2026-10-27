@@ -1,3 +1,5 @@
+"""Routes des familles et de leurs membres (comptes inscrits et rôles)."""
+
 from uuid import UUID
 
 from fastapi import APIRouter
@@ -5,10 +7,10 @@ from sqlalchemy import func, select
 
 from app.core.config import get_settings
 from app.core.db import set_family_context
+from app.core.deps import DB, AdminCtx, Ctx, CurrentUser, FamilyContext
 from app.core.errors import bad_request, conflict, not_found
-from app.deps import DB, AdminCtx, Ctx, CurrentUser, FamilyContext
 from app.models import Family, Membership, Person, Role, User
-from app.schemas import (
+from app.modules.families.schemas import (
     FamilyCreate,
     FamilyOut,
     FamilyUpdate,
@@ -16,7 +18,7 @@ from app.schemas import (
     MemberUpdate,
     MyFamilyOut,
 )
-from app.services import audit
+from app.shared import audit
 
 router = APIRouter(tags=["families"])
 
