@@ -14,6 +14,8 @@ from app.core.db import engine  # noqa: E402
 from app.main import app  # noqa: E402
 
 TABLES = [
+    "delegation",
+    "proposal",
     "audit_log",
     "title_holding",
     "title_definition",
@@ -101,3 +103,34 @@ def png_bytes() -> bytes:
     buf = io.BytesIO()
     Image.new("RGB", (1200, 900), (200, 120, 40)).save(buf, format="PNG")
     return buf.getvalue()
+
+
+def build_family(api: Api) -> dict:
+    """Racine → 2 enfants → petits-enfants, avec un conjoint et une seconde épouse."""
+    ids = {}
+    ids["root"] = api.person("Ngougouré", "F", birth_year=1850, is_living=False)
+    ids["husband"] = api.person("Époux", "M", spouse=ids["root"], is_living=False)
+    ids["a"] = api.person("Alpha", "M", parents=[ids["root"], ids["husband"]])
+    ids["b"] = api.person("Beta", "F", parents=[ids["root"], ids["husband"]])
+    ids["a_wife1"] = api.person("Awa", "F", spouse=ids["a"], union_rank=1)
+    ids["a_wife2"] = api.person("Bintou", "F", spouse=ids["a"], union_rank=2)
+    ids["a1"] = api.person("Ali", "M", parents=[ids["a"], ids["a_wife1"]])
+    ids["a2"] = api.person("Amina", "F", parents=[ids["a"], ids["a_wife2"]])
+    ids["b1"] = api.person("Bachir", "M", parents=[ids["b"]])
+    ids["a1c"] = api.person("Adam", "M", parents=[ids["a1"]])
+    ids["b1c"] = api.person("Basma", "F", parents=[ids["b1"]])
+    r = api.patch("/families/current", {"root_person_id": ids["root"]})
+    assert r.status_code == 200
+    return ids
+
+
+def join_as(client, api: Api, email: str, name: str, person_id=None, role="member") -> Api:
+    """Invite un nouveau compte (relié à `person_id`) et le fait entrer dans la famille de `api`."""
+    body = {"role": role, **({"person_id": person_id} if person_id else {})}
+    inv = api.post("/invitations", body).json()
+    guest = Api(client, email, name)
+    r = guest.post(f"/invitations/token/{inv['token']}/accept")
+    assert r.status_code == 200, r.text
+    guest.family_id = r.json()["id"]
+    guest.person_id = r.json()["person_id"]
+    return guest

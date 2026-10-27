@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 
 from app.genealogy.kinship import blood_label, spouse_label
 from app.models import (
+    Delegation,
     FamilyUnion,
     Membership,
     ParentChild,
@@ -38,6 +39,7 @@ class FamilyGraph:
     holdings: list[TitleHolding]
     root_id: UUID | None
     accounts: dict[UUID, UUID] = field(default_factory=dict)  # person_id -> user_id
+    delegations: dict[UUID, set[UUID]] = field(default_factory=dict)  # membership_id -> person_ids
 
     parents: dict[UUID, set[UUID]] = field(default_factory=lambda: defaultdict(set))
     children: dict[UUID, set[UUID]] = field(default_factory=lambda: defaultdict(set))
@@ -88,7 +90,10 @@ class FamilyGraph:
                 )
             )
         }
-        return cls(persons, links, unions, titles, holdings, root_id, accounts)
+        delegations: dict[UUID, set[UUID]] = defaultdict(set)
+        for d in db.scalars(select(Delegation).where(Delegation.family_id == family_id)):
+            delegations[d.membership_id].add(d.person_id)
+        return cls(persons, links, unions, titles, holdings, root_id, accounts, dict(delegations))
 
     # ---------- parcours ----------
 
@@ -273,15 +278,23 @@ class FamilyGraph:
     # ---------- périmètre d'écriture (§2.6) ----------
 
     def writable_scope(self, membership: Membership) -> set[UUID] | None:
-        """Ensemble des personnes modifiables ; None = toute la famille."""
+        """Personnes que ce membre peut modifier directement ; None = toute la famille.
+
+        - administrateur : toute la famille ;
+        - chef de branche : sa personne de branche, ses descendants et leurs conjoints ;
+        - autres rôles : sa propre fiche, ses descendants et leurs conjoints ;
+        - dans tous les cas, en plus : les personnes qui lui sont déléguées (et leur descendance).
+        """
         if membership.role == Role.ADMIN:
             return None
-        anchor = membership.person_id
+        main = membership.person_id
         if membership.role == Role.BRANCH_HEAD and membership.branch_person_id:
-            anchor = membership.branch_person_id
-        if anchor is None or anchor not in self.persons:
-            return set()
-        scope = {anchor} | set(self.descendants(anchor))
+            main = membership.branch_person_id
+        anchors = [main, *self.delegations.get(membership.id, ())]
+        scope: set[UUID] = set()
+        for anchor in anchors:
+            if anchor in self.persons:
+                scope |= {anchor} | set(self.descendants(anchor))
         for pid in list(scope):
             scope |= self.spouses.get(pid, set())
         if membership.person_id:

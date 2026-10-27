@@ -64,7 +64,7 @@ def list_persons(
 @router.post("", response_model=PersonDetail, status_code=201)
 def create_person(body: PersonCreate, ctx: Ctx) -> PersonDetail:
     graph = load_graph(ctx)
-    anchors = [*body.parent_ids, *([body.spouse_id] if body.spouse_id else [])]
+    anchors = service.anchors_of_new_person(body)
     for aid in anchors:
         if aid not in graph.persons:
             raise not_found("Personne liée")

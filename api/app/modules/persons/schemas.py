@@ -30,7 +30,9 @@ class PersonBase(BaseModel):
 
 
 class PersonCreate(PersonBase):
+    # Rattachements immédiats : parents, enfants (pour ajouter un ascendant), conjoint.
     parent_ids: list[UUID] = Field(default_factory=list, max_length=2)
+    child_ids: list[UUID] = Field(default_factory=list, max_length=30)
     spouse_id: UUID | None = None
     union_kind: UnionKind = "customary"
     union_rank: int | None = Field(default=None, ge=1, le=20)

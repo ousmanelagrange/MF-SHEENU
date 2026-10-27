@@ -15,6 +15,8 @@ from app.core.errors import bad_request, forbidden, not_found
 from app.genealogy.graph import load_graph
 from app.models import FamilyUnion, Membership, ParentChild, Person
 from app.modules.persons.schemas import PersonCreate, PersonUpdate
+from app.modules.relations import service as relations_service
+from app.modules.relations.schemas import ParentChildCreate
 from app.shared import audit
 
 
@@ -26,16 +28,23 @@ def get_person(ctx: FamilyContext, pid: UUID) -> Person:
     return p
 
 
+def anchors_of_new_person(body: PersonCreate) -> list[UUID]:
+    """Personnes existantes auxquelles une nouvelle fiche est rattachée."""
+    return [*body.parent_ids, *body.child_ids, *([body.spouse_id] if body.spouse_id else [])]
+
+
 def create_person(ctx: FamilyContext, body: PersonCreate) -> Person:
     """Crée une fiche, et la rattache directement à ses parents et à son conjoint s'ils sont donnés."""
     graph = load_graph(ctx)
-    for related_id in [*body.parent_ids, *([body.spouse_id] if body.spouse_id else [])]:
+    for related_id in anchors_of_new_person(body):
         if related_id not in graph.persons:
             raise not_found("Personne liée")
     if len(set(body.parent_ids)) != len(body.parent_ids):
         raise bad_request("validation_error", "Parents en double.")
 
-    fields = body.model_dump(exclude={"parent_ids", "spouse_id", "union_kind", "union_rank"})
+    fields = body.model_dump(
+        exclude={"parent_ids", "child_ids", "spouse_id", "union_kind", "union_rank"}
+    )
     person = Person(family_id=ctx.family.id, created_by=ctx.user.id, **fields)
     if person.death_date or person.death_year:
         person.is_living = False
@@ -48,6 +57,13 @@ def create_person(ctx: FamilyContext, body: PersonCreate) -> Person:
         ctx.db.add(link)
         ctx.db.flush()
         audit.record(ctx, "create", "parent_child", link.id, after=audit.snapshot(link))
+
+    # Ajout d'un ascendant : la nouvelle personne devient parent d'enfants existants.
+    # La règle des deux parents biologiques (RG-08) s'applique comme pour un lien ajouté seul.
+    for child_id in body.child_ids:
+        relations_service.add_parent_child(
+            ctx, ParentChildCreate(parent_id=person.id, child_id=child_id)
+        )
 
     if body.spouse_id:
         union = FamilyUnion(

@@ -1,7 +1,7 @@
 from sqlalchemy import text
 
 from app.core.db import SessionLocal, set_family_context
-from tests.conftest import Api, png_bytes
+from tests.conftest import Api, build_family, png_bytes
 
 
 def test_health(client):
@@ -54,25 +54,6 @@ def test_family_requires_header_and_membership(client, api):
     r = other.get("/persons")
     assert r.status_code == 403
     assert r.json()["detail"]["code"] == "not_a_member"
-
-
-def build_family(api: Api) -> dict:
-    """Racine → 2 enfants → petits-enfants, avec un conjoint et une seconde épouse."""
-    ids = {}
-    ids["root"] = api.person("Ngougouré", "F", birth_year=1850, is_living=False)
-    ids["husband"] = api.person("Époux", "M", spouse=ids["root"], is_living=False)
-    ids["a"] = api.person("Alpha", "M", parents=[ids["root"], ids["husband"]])
-    ids["b"] = api.person("Beta", "F", parents=[ids["root"], ids["husband"]])
-    ids["a_wife1"] = api.person("Awa", "F", spouse=ids["a"], union_rank=1)
-    ids["a_wife2"] = api.person("Bintou", "F", spouse=ids["a"], union_rank=2)
-    ids["a1"] = api.person("Ali", "M", parents=[ids["a"], ids["a_wife1"]])
-    ids["a2"] = api.person("Amina", "F", parents=[ids["a"], ids["a_wife2"]])
-    ids["b1"] = api.person("Bachir", "M", parents=[ids["b"]])
-    ids["a1c"] = api.person("Adam", "M", parents=[ids["a1"]])
-    ids["b1c"] = api.person("Basma", "F", parents=[ids["b1"]])
-    r = api.patch("/families/current", {"root_person_id": ids["root"]})
-    assert r.status_code == 200
-    return ids
 
 
 def kin(api, a, b):

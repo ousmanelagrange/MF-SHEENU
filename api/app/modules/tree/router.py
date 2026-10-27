@@ -4,14 +4,12 @@ from collections import Counter
 from uuid import UUID
 
 from fastapi import APIRouter, Query
-from fastapi.responses import PlainTextResponse
 from sqlalchemy import func, select
 
 from app.core.deps import Ctx
 from app.core.errors import not_found
 from app.genealogy.graph import load_graph
 from app.models import Membership
-from app.modules.data.gedcom_export import export_gedcom
 from app.modules.relations.schemas import ParentChildOut, UnionOut
 from app.modules.tree.schemas import KinshipOut, StatsOut, TreeOut
 
@@ -52,18 +50,6 @@ def kinship(
     result = graph.kinship(a, to)
     path = [graph.summary(pid) for pid in result.pop("path")]
     return KinshipOut(**result, path=path)
-
-
-@router.get("/export/gedcom", response_class=PlainTextResponse)
-def gedcom(ctx: Ctx) -> PlainTextResponse:
-    graph = load_graph(ctx)
-    content = export_gedcom(graph, ctx.family.name, include_living_dates=ctx.is_admin)
-    safe = "".join(ch for ch in ctx.family.name if ch.isalnum() or ch in " -_").strip() or "famille"
-    return PlainTextResponse(
-        content,
-        media_type="text/plain; charset=utf-8",
-        headers={"Content-Disposition": f'attachment; filename="{safe}.ged"'},
-    )
 
 
 @router.get("/stats", response_model=StatsOut)
