@@ -787,3 +787,88 @@ La transcription automatique n'est pas branchée : aucun service gratuit ne reco
 | Mobile | Récit | Lecteur audio, couches au choix, proposer une correction ou une traduction |
 | Mobile | Album | Grille, visionneuse, ajout de photos depuis la galerie |
 | Mobile | Fil | Publication avec photo depuis la galerie |
+
+## 12. Phase 6 — Intégrations
+
+Objectif : que la plateforme travaille avec WhatsApp au lieu de le remplacer, sans rien payer tant que la famille ne le décide pas, et qu'elle reste utilisable avec un réseau faible (ENF-04).
+
+### 12.1 Tables (migration 0007)
+
+| Table | RLS | Rôle |
+|---|---|---|
+| `notification` | oui | Message pour un membre dans une famille : type, titre, extrait, lien, lu ou non |
+| `join_request` | oui | Demande de rattachement : identité, « comment je me rattache », village, pays, téléphone, statut, fiche attribuée, motif |
+| `join_link` | non | Lien de rattachement de la famille (empreinte du jeton). Lu avant de connaître la famille, comme une invitation |
+| `payment_intent` | non | Paiement lancé chez un prestataire. Lu par le webhook, qui arrive sans famille, avant d'ouvrir le contexte RLS |
+
+### 12.2 Notifications
+
+Créées dans la même transaction que l'action (`app/shared/notify.py`) ; l'auteur de l'action n'est jamais notifié.
+
+| Événement | Destinataires |
+|---|---|
+| Annonce du bureau, annonce de vie | Tous les membres |
+| Commentaire | Auteur de la publication |
+| Proposition acceptée ou refusée | Auteur, avec le motif |
+| Paiement validé ou refusé (trésorier ou prestataire) | Déclarant |
+| Texte de récit validé ou refusé | Auteur |
+| Demande de rattachement reçue | Administrateurs et chefs de branche |
+| Rattachement accepté | Nouveau membre |
+
+Web : cloche avec compteur, relue chaque minute. Mobile : compteur sur l'onglet « Plus » et écran Notifications.
+
+### 12.3 Rattachement (RG-04)
+
+1. L'administrateur crée le **lien de rattachement** et le poste dans le groupe WhatsApp. Le jeton n'est montré qu'une fois ; en créer un nouveau invalide l'ancien.
+2. Le visiteur crée son compte, ne voit que le nom de la famille, et décrit comment il s'y rattache.
+3. Un administrateur ou un chef de branche le place : **comme enfant** d'une personne de l'arbre (filiation créée, certitude « orale »), **sur une fiche existante** sans compte, ou **sur une nouvelle fiche**. Un chef de branche ne place que dans sa branche ; seul l'administrateur nomme un chef de branche.
+4. Un refus porte un motif ; le visiteur peut compléter et renvoyer sa demande.
+
+### 12.4 Messagerie (`app/integrations/messaging.py`)
+
+Interface `Messenger.send(numéro, texte)`. Deux implémentations : `ShareMessenger` (par défaut) renvoie un lien `wa.me` à ouvrir ; `WhatsAppCloudMessenger` envoie par l'API WhatsApp Business et garde le lien en secours. Les numéros sont normalisés au format international (un numéro à 9 chiffres est supposé camerounais).
+
+- **Rappels de cotisation** (trésorier) : un message par personne en retard, avec sa part, ce qui est versé et ce qui reste. Le numéro est celui de la fiche, sinon du compte, sinon du délégué qui gère la fiche.
+- **Résumé de la semaine** : nouvelles personnes, annonces, collectes en cours, nouveaux récits, anniversaires. Il est écrit avec le gras WhatsApp, prêt à coller dans le groupe.
+
+### 12.5 Paiement Mobile Money (`app/integrations/payments.py`)
+
+Interface `PaymentGateway` : `start()` ouvre la transaction chez le prestataire et `parse_webhook()` vérifie la signature et lit le résultat. Le paiement est créé « déclaré » ; le webhook signé (HMAC-SHA256) le passe en « validé » ou « refusé » et prévient le payeur. Un second appel du webhook est sans effet. Seul le simulateur est livré : aucun prestataire réel n'a été branché sans son contrat ni sa documentation.
+
+### 12.6 Diaspora
+
+`GET /diaspora` compte les personnes vivantes par pays de résidence, en regroupant les écritures (« france », « France »). Le web place un cercle par pays sur une carte Equal Earth (frontières Natural Earth 1:110m, chargées à la demande). Les noms de pays saisis en français sont reliés au code ISO de la carte ; un pays inconnu de cette table reste dans le classement. `GET /persons?country=` liste les personnes d'un pays.
+
+### 12.7 Mobile hors connexion
+
+Les réponses des écrans de lecture (familles, personnes, arbre, fil, récits, albums, frise, collectes, diaspora, notifications) sont gardées sur le téléphone, par famille. Sans réseau, l'écran affiche la dernière version reçue avec un bandeau. Les actions ne sont pas mises en file d'attente : il faut le réseau pour publier, payer ou valider. Le cache est effacé à la déconnexion.
+
+### 12.8 Points d'entrée
+
+| Méthode | Chemin | Accès | Rôle |
+|---|---|---|---|
+| GET | `/notifications` | membre | Les 40 dernières et le nombre de non lues |
+| POST | `/notifications/read` | membre | Marquer comme lues (toutes ou une liste) |
+| GET / POST / DELETE | `/join-link` | admin (lecture : chef de branche) | État, création ou remplacement, désactivation |
+| GET / POST | `/join/{token}` | compte connecté | Aperçu (nom de la famille seulement) ; envoyer sa demande |
+| GET | `/join-requests?status=` | admin, chef de branche | Demandes |
+| POST | `/join-requests/{id}/accept` \| `reject` | admin, chef de branche | Placer dans l'arbre ; refuser avec motif |
+| GET | `/digest?days=` | membre | Résumé et lien de partage WhatsApp |
+| GET | `/diaspora` | membre | Pays de résidence |
+| POST | `/contributions/events/{id}/reminders` | trésorier | Rappels personnalisés |
+| GET | `/contributions/online` | membre | Paiement en ligne activé ? |
+| POST | `/contributions/events/{id}/pay-online` | membre | Lancer un paiement Mobile Money |
+| POST | `/webhooks/payments/{provider}` | prestataire (signature) | Confirmation |
+
+### 12.9 Écrans
+
+| Plateforme | Écran | Contenu |
+|---|---|---|
+| Web | Barre latérale | Cloche des notifications |
+| Web | Accueil | Résumé de la semaine, partager sur WhatsApp ou copier |
+| Web | Membres et invitations | Demandes de rattachement, lien de rattachement |
+| Web | `/rattachement/:token` | Page du visiteur : compte, demande, suivi |
+| Web | Collecte | « Relancer » (trésorier), « Payer par Mobile Money » (si activé) |
+| Web | `/diaspora` | Carte, classement des pays, personnes du pays choisi |
+| Mobile | Plus | Notifications, la famille dans le monde ; compteur combiné sur l'onglet |
+| Mobile | Partout | Lecture hors connexion avec bandeau |

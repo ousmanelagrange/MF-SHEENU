@@ -24,3 +24,10 @@ services:
         sync: false
       - key: STORAGE_BACKEND
         value: local
+      # Phase 6 : « share » prépare des liens WhatsApp (gratuit) ; « none » désactive le paiement en ligne
+      - key: MESSAGING_BACKEND
+        value: share
+      - key: PAYMENT_BACKEND
+        value: none
+      - key: PAYMENT_WEBHOOK_SECRET
+        generateValue: true

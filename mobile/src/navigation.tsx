@@ -5,18 +5,21 @@
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { DefaultTheme, NavigationContainer, type NavigationProp } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Platform, Pressable, ScrollView, Text } from "react-native";
 import { api, session } from "./api";
 import { FeedIcon, MoreIcon, PeopleIcon, TreeIcon, WalletIcon } from "./components/icons";
+import { OfflineBanner } from "./components/OfflineBanner";
 import { s } from "./components/ui";
 import { AlbumScreen } from "./screens/AlbumScreen";
 import { ContributionsScreen } from "./screens/ContributionsScreen";
 import { EventScreen } from "./screens/EventScreen";
 import { FamiliesScreen } from "./screens/FamiliesScreen";
+import { DiasporaScreen } from "./screens/DiasporaScreen";
 import { FeedScreen } from "./screens/FeedScreen";
 import { MemoryScreen } from "./screens/MemoryScreen";
 import { NarrativeScreen } from "./screens/NarrativeScreen";
+import { NotificationsScreen } from "./screens/NotificationsScreen";
 import { PeopleScreen } from "./screens/PeopleScreen";
 import { PersonScreen } from "./screens/PersonScreen";
 import { PostScreen } from "./screens/PostScreen";
@@ -35,6 +38,8 @@ type RootRoutes = {
   Memory: undefined;
   Narrative: { id: string };
   Album: { id: string };
+  Notifications: undefined;
+  Diaspora: undefined;
 };
 type Nav = NavigationProp<RootRoutes>;
 
@@ -57,13 +62,25 @@ const headerTitleStyle = { fontFamily: fonts.name, fontSize: 18, color: colors.i
 export function AppNavigation({ onLogout }: { onLogout: () => void }) {
   const [family, setFamily] = useState<MyFamily | null>(null);
   const [toReview, setToReview] = useState(0);
+  const [unread, setUnread] = useState(0);
 
-  useEffect(() => {
+  // Compteurs de l'onglet « Plus » : propositions à valider et notifications non lues,
+  // relus chaque minute tant que l'application est ouverte.
+  const refreshCounts = useCallback(() => {
     if (!family) return;
     api<{ to_review: number }>("/proposals/counts")
       .then((c) => setToReview(c.to_review))
       .catch(() => undefined);
+    api<{ unread: number }>("/notifications")
+      .then((n) => setUnread(n.unread))
+      .catch(() => undefined);
   }, [family]);
+  const markRead = useCallback(() => setUnread(0), []);
+  useEffect(() => {
+    refreshCounts();
+    const id = setInterval(refreshCounts, 60_000);
+    return () => clearInterval(id);
+  }, [refreshCounts]);
 
   return (
     <NavigationContainer theme={theme}>
@@ -80,7 +97,7 @@ export function AppNavigation({ onLogout }: { onLogout: () => void }) {
           )}
         </Stack.Screen>
         <Stack.Screen name="Main" options={{ headerShown: false }}>
-          {({ navigation }) => <MainTabs family={family} toReview={toReview} nav={navigation as unknown as Nav} onLogout={onLogout} />}
+          {({ navigation }) => <MainTabs family={family} toReview={toReview} unread={unread} nav={navigation as unknown as Nav} onLogout={onLogout} />}
         </Stack.Screen>
         <Stack.Screen name="Event" options={{ title: "Collecte" }}>
           {({ route, navigation }) => (
@@ -104,6 +121,12 @@ export function AppNavigation({ onLogout }: { onLogout: () => void }) {
         <Stack.Screen name="Album" options={{ title: "Album" }}>
           {({ route }) => <AlbumScreen id={route.params.id} />}
         </Stack.Screen>
+        <Stack.Screen name="Notifications" options={{ title: "Notifications" }}>
+          {() => <NotificationsScreen onRead={markRead} />}
+        </Stack.Screen>
+        <Stack.Screen name="Diaspora" options={{ title: "La famille dans le monde" }}>
+          {({ navigation }) => <DiasporaScreen onOpenPerson={(id) => navigation.push("Person", { id })} />}
+        </Stack.Screen>
         <Stack.Screen name="Proposals" options={{ title: "Propositions" }}>
           {() => <ProposalsScreen />}
         </Stack.Screen>
@@ -113,11 +136,24 @@ export function AppNavigation({ onLogout }: { onLogout: () => void }) {
           )}
         </Stack.Screen>
       </Stack.Navigator>
+      <OfflineBanner />
     </NavigationContainer>
   );
 }
 
-function MainTabs({ family, toReview, nav, onLogout }: { family: MyFamily | null; toReview: number; nav: Nav; onLogout: () => void }) {
+function MainTabs({
+  family,
+  toReview,
+  unread,
+  nav,
+  onLogout,
+}: {
+  family: MyFamily | null;
+  toReview: number;
+  unread: number;
+  nav: Nav;
+  onLogout: () => void;
+}) {
   const open = (id: string) => nav.navigate("Person", { id });
   return (
     <Tabs.Navigator
@@ -147,7 +183,7 @@ function MainTabs({ family, toReview, nav, onLogout }: { family: MyFamily | null
         name="Plus"
         options={{
           tabBarIcon: MoreIcon,
-          tabBarBadge: toReview > 0 ? toReview : undefined,
+          tabBarBadge: toReview + unread > 0 ? toReview + unread : undefined,
           tabBarBadgeStyle: { backgroundColor: colors.brass },
         }}
       >
@@ -156,8 +192,10 @@ function MainTabs({ family, toReview, nav, onLogout }: { family: MyFamily | null
             <Text style={[s.lead, { padding: 20 }]}>
               {family?.name}, {ROLE_LABELS[family?.role ?? "member"]?.toLowerCase()}
             </Text>
+            <MenuRow label="Notifications" count={unread} countLabel="nouvelle(s)" onPress={() => nav.navigate("Notifications")} />
             {family?.person_id && <MenuRow label="Ma fiche" onPress={() => open(family.person_id!)} />}
             <MenuRow label="Mémoire de la famille" onPress={() => nav.navigate("Memory")} />
+            <MenuRow label="La famille dans le monde" onPress={() => nav.navigate("Diaspora")} />
             <MenuRow label="Propositions" count={toReview} onPress={() => nav.navigate("Proposals")} />
             <MenuRow
               label="Changer de famille"
@@ -174,11 +212,15 @@ function MainTabs({ family, toReview, nav, onLogout }: { family: MyFamily | null
   );
 }
 
-function MenuRow({ label, count, onPress }: { label: string; count?: number; onPress: () => void }) {
+function MenuRow({ label, count, countLabel = "à valider", onPress }: { label: string; count?: number; countLabel?: string; onPress: () => void }) {
   return (
     <Pressable onPress={onPress} style={({ pressed }) => [s.row, pressed && { backgroundColor: colors.indigo50 }]}>
       <Text style={[s.name, { fontFamily: fonts.uiMedium, fontSize: 16, flex: 1 }]}>{label}</Text>
-      {!!count && <Text style={[s.meta, { color: colors.brass, fontFamily: fonts.uiSemi }]}>{count} à valider</Text>}
+      {!!count && (
+        <Text style={[s.meta, { color: colors.brass, fontFamily: fonts.uiSemi }]}>
+          {count} {countLabel}
+        </Text>
+      )}
     </Pressable>
   );
 }

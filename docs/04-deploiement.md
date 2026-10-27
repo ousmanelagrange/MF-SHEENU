@@ -61,6 +61,17 @@ Alternative équivalente : Cloudflare Pages (le fichier `web/public/_redirects` 
 2. Créer un jeton API R2 (lecture et écriture sur ce bucket).
 3. Sur Render, définir : `STORAGE_BACKEND=s3`, `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY`, `S3_SECRET_KEY`, `S3_PUBLIC_URL`.
 
+## 4 bis. Messagerie et paiement en ligne (phase 6, facultatif)
+
+Par défaut, rien de payant n'est branché :
+
+- `MESSAGING_BACKEND=share` : les rappels de cotisation et le résumé de la semaine sont préparés en liens WhatsApp que le trésorier ou le secrétaire ouvre lui-même ;
+- `PAYMENT_BACKEND=none` : les paiements restent déclarés à la main et validés par le trésorier.
+
+Pour envoyer directement par l'**API WhatsApp Business** (payante, compte Meta Business vérifié) : `MESSAGING_BACKEND=whatsapp_cloud`, `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID`. Prévoir des modèles de message approuvés par Meta pour écrire hors de la fenêtre de 24 heures.
+
+Pour le **Mobile Money** : écrire la classe du prestataire choisi dans `api/app/integrations/payments.py` (deux méthodes, `start` et `parse_webhook`), l'ajouter dans `get_gateway()`, puis déclarer l'adresse du webhook chez le prestataire : `https://<api>/api/v1/webhooks/payments/<nom>`. `PAYMENT_BACKEND=sandbox` permet de tout essayer sans argent réel. `PAYMENT_WEBHOOK_SECRET` (généré par Render) signe les webhooks.
+
 ## 5. Premier lancement
 
 1. Ouvrir le web, **Créer un compte**, puis **Créer l'espace d'une famille** : vous en êtes l'administrateur.

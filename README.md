@@ -46,4 +46,4 @@ npm run dev                     # http://localhost:5173
 | 3. Cotisations | Barèmes, collectes, déclarations, validation, tableau transparent, récapitulatif WhatsApp | Terminée |
 | 4. Vie sociale | Fil, stories, annonces, sondages, modération, mémoriaux, anniversaires ; réunion de deux familles | Terminée |
 | 5. Mémoire | Récits audio et vidéo, transcriptions et traductions relues, albums, frise | Terminée |
-| 6. Intégrations | WhatsApp, Mobile Money, carte de la diaspora, rattachement | À venir |
+| 6. Intégrations | Notifications, rattachement par lien, résumé et rappels WhatsApp, Mobile Money (prêt à brancher), diaspora, mobile hors connexion | Terminée |

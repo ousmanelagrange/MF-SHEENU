@@ -1,4 +1,6 @@
-// Client HTTP mobile : jetons conservés sur l'appareil, rafraîchissement automatique, famille courante.
+// Client HTTP mobile : jetons conservés sur l'appareil, rafraîchissement automatique, famille courante,
+// et cache hors connexion : les dernières réponses des écrans de lecture sont gardées sur le
+// téléphone et réaffichées quand le réseau manque (ENF-04).
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
@@ -43,7 +45,9 @@ export const session = {
   },
   async clear() {
     cache = { access: null, refresh: null, family: null };
-    await AsyncStorage.multiRemove([K.access, K.refresh, K.family]);
+    // Les données familiales mises en cache partent avec la session
+    const keys = (await AsyncStorage.getAllKeys()).filter((k) => k.startsWith("sheenu.cache."));
+    await AsyncStorage.multiRemove([K.access, K.refresh, K.family, ...keys]);
   },
 };
 
@@ -66,6 +70,25 @@ async function refresh(): Promise<boolean> {
   return true;
 }
 
+// ---------- Cache hors connexion ----------
+
+/** Écrans relus hors connexion. Les actions (POST, PATCH…) ne sont jamais rejouées. */
+const CACHED = ["/families", "/persons", "/tree", "/feed", "/narratives", "/albums", "/timeline", "/contributions/events", "/diaspora", "/notifications"];
+const cacheKey = (url: string) => `sheenu.cache.${cache.family ?? "-"}.${url}`;
+
+let offline = false;
+const listeners = new Set<(offline: boolean) => void>();
+function setOffline(value: boolean) {
+  if (value === offline) return;
+  offline = value;
+  listeners.forEach((l) => l(value));
+}
+/** S'abonner au passage hors connexion / en ligne ; renvoie la fonction de désabonnement. */
+export function onConnectivity(listener: (offline: boolean) => void) {
+  listeners.add(listener);
+  return () => void listeners.delete(listener);
+}
+
 export async function api<T>(
   path: string,
   opts: { method?: string; body?: unknown; query?: Record<string, string | number | undefined> } = {},
@@ -75,19 +98,32 @@ export async function api<T>(
     .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
     .join("&");
   const url = `${API_URL}/api/v1${path}${qs ? `?${qs}` : ""}`;
+  const method = opts.method ?? "GET";
+  const cacheable = method === "GET" && CACHED.some((prefix) => path.startsWith(prefix));
   const send = () => {
     const headers: Record<string, string> = {};
     if (cache.access) headers.Authorization = `Bearer ${cache.access}`;
     if (cache.family) headers["X-Family-Id"] = cache.family;
     if (opts.body !== undefined) headers["Content-Type"] = "application/json";
     return fetch(url, {
-      method: opts.method ?? "GET",
+      method,
       headers,
       body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
     });
   };
-  let res = await send();
-  if (res.status === 401 && (await refresh())) res = await send();
+
+  let res: Response;
+  try {
+    res = await send();
+    if (res.status === 401 && (await refresh())) res = await send();
+    setOffline(false);
+  } catch {
+    // Pas de réseau : on ressert la dernière réponse connue, s'il y en a une
+    setOffline(true);
+    const saved = cacheable ? await AsyncStorage.getItem(cacheKey(url)) : null;
+    if (saved) return JSON.parse(saved) as T;
+    throw new ApiError(0, "offline", "Pas de connexion. Réessayez quand le réseau revient.");
+  }
   if (!res.ok) {
     let code = "error";
     let message = `Erreur ${res.status}`;
@@ -103,7 +139,9 @@ export async function api<T>(
     throw new ApiError(res.status, code, message);
   }
   if (res.status === 204) return undefined as T;
-  return res.json();
+  const data = await res.json();
+  if (cacheable) void AsyncStorage.setItem(cacheKey(url), JSON.stringify(data)).catch(() => undefined);
+  return data;
 }
 
 /** Envoie une photo choisie sur l'appareil (expo-image-picker) et renvoie son adresse. */
