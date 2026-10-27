@@ -21,12 +21,13 @@ import uuid
 from datetime import UTC, datetime
 
 import jwt
+from anyio import to_thread
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import IntegrityError
 
 from app.core.config import get_settings
-from app.core.db import SessionLocal
+from app.core.db import AuxSession
 from app.core.security import decode_token
 from app.models import IdempotencyKey, RequestMetric
 from app.security import media, ratelimit
@@ -130,7 +131,7 @@ class _Counters:
     @staticmethod
     def write(minute: datetime, d: dict) -> None:
         try:
-            with SessionLocal() as db:
+            with AuxSession() as db:
                 stmt = insert(RequestMetric).values(minute=minute, **d)
                 stmt = stmt.on_conflict_do_update(
                     index_elements=["minute"],
@@ -164,7 +165,9 @@ class Metrics:
         if scope["path"].startswith(API) and ratelimit.hit("global", ip) is not None:
             from app.security import events  # import tardif : évite un cycle
 
-            events.record("rate_limited", None, bucket="global", key=ip)
+            await to_thread.run_sync(
+                lambda: events.record("rate_limited", None, bucket="global", key=ip)
+            )
             return await _send_json(
                 send,
                 429,
@@ -183,7 +186,9 @@ class Metrics:
             await self.app(scope, receive, wrapped)
         finally:
             if scope["path"].startswith(API):
-                counters.add(status["code"], int((time.perf_counter() - start) * 1000))
+                # Le versement en base (une fois par minute) ne doit pas bloquer la boucle asynchrone
+                elapsed = int((time.perf_counter() - start) * 1000)
+                await to_thread.run_sync(counters.add, status["code"], elapsed)
 
 
 # ---------- 3. Taille des corps de requête ----------
@@ -300,42 +305,28 @@ class Idempotency:
         async def replay():  # noqa: ANN202
             return {"type": "http.request", "body": body, "more_body": False}
 
-        with SessionLocal() as db:
-            row = db.get(IdempotencyKey, (user_id, key))
-            if row is None:
-                db.add(IdempotencyKey(user_id=user_id, key=key, request_hash=digest))
-                try:
-                    db.commit()
-                except IntegrityError:  # même clé arrivée au même instant
-                    return await _send_json(
-                        send, 409, {"code": "in_progress", "message": "Envoi déjà en cours."}
-                    )
-            elif row.request_hash != digest:
-                return await _send_json(
-                    send,
-                    422,
-                    {
-                        "code": "idempotency_mismatch",
-                        "message": "Clé déjà utilisée pour un autre envoi.",
-                    },
-                )
-            elif row.status_code == 0:
-                return await _send_json(
-                    send, 409, {"code": "in_progress", "message": "Envoi déjà en cours."}
-                )
-            else:
-                payload = (row.response_body or "").encode()
-                headers = [
-                    (b"content-type", b"application/json"),
-                    (b"idempotent-replayed", b"true"),
-                ]
-                if payload:
-                    headers.append((b"content-length", str(len(payload)).encode()))
-                await send(
-                    {"type": "http.response.start", "status": row.status_code, "headers": headers}
-                )
-                await send({"type": "http.response.body", "body": payload})
-                return None
+        verdict, stored = await to_thread.run_sync(self._claim, user_id, key, digest)
+        if verdict == "in_progress":
+            return await _send_json(
+                send, 409, {"code": "in_progress", "message": "Envoi déjà en cours."}
+            )
+        if verdict == "mismatch":
+            return await _send_json(
+                send,
+                422,
+                {
+                    "code": "idempotency_mismatch",
+                    "message": "Clé déjà utilisée pour un autre envoi.",
+                },
+            )
+        if verdict == "replay":
+            status_code, payload = stored
+            headers = [(b"content-type", b"application/json"), (b"idempotent-replayed", b"true")]
+            if payload:
+                headers.append((b"content-length", str(len(payload)).encode()))
+            await send({"type": "http.response.start", "status": status_code, "headers": headers})
+            await send({"type": "http.response.body", "body": payload})
+            return None
 
         status = {"code": 500}
         out: list[bytes] = []
@@ -350,7 +341,25 @@ class Idempotency:
         try:
             await self.app(scope, replay, capture)
         finally:
-            self._store(user_id, key, status["code"], b"".join(out))
+            await to_thread.run_sync(self._store, user_id, key, status["code"], b"".join(out))
+
+    @staticmethod
+    def _claim(user_id: uuid.UUID, key: str, digest: str) -> tuple[str, tuple | None]:
+        """Réserve la clé ou dit pourquoi c'est impossible : new, replay, mismatch, in_progress."""
+        with AuxSession() as db:
+            row = db.get(IdempotencyKey, (user_id, key))
+            if row is None:
+                db.add(IdempotencyKey(user_id=user_id, key=key, request_hash=digest))
+                try:
+                    db.commit()
+                except IntegrityError:  # même clé arrivée au même instant
+                    return "in_progress", None
+                return "new", None
+            if row.request_hash != digest:
+                return "mismatch", None
+            if row.status_code == 0:
+                return "in_progress", None
+            return "replay", (row.status_code, (row.response_body or "").encode())
 
     @staticmethod
     def _user(scope) -> uuid.UUID | None:  # noqa: ANN001
@@ -364,21 +373,27 @@ class Idempotency:
 
     @staticmethod
     def _store(user_id: uuid.UUID, key: str, status: int, body: bytes) -> None:
-        with SessionLocal() as db:
-            row = db.get(IdempotencyKey, (user_id, key))
-            if row is None:
-                return
-            if status >= 500:  # erreur serveur : on libère la clé pour pouvoir réessayer
-                db.delete(row)
-            else:
-                row.status_code = status
-                row.response_body = body.decode(errors="replace")
-            db.commit()
+        """Mémorise la réponse. Appelé après l'envoi : une erreur ici ne doit pas remonter
+        (la réponse est partie, la connexion serait coupée net) ; au pire, la clé reste
+        « en cours » et un rejeu recevra « réessayez » jusqu'à la purge."""
+        try:
+            with AuxSession() as db:
+                row = db.get(IdempotencyKey, (user_id, key))
+                if row is None:
+                    return
+                if status >= 500:  # erreur serveur : on libère la clé pour pouvoir réessayer
+                    db.delete(row)
+                else:
+                    row.status_code = status
+                    row.response_body = body.decode(errors="replace")
+                db.commit()
+        except Exception:  # noqa: BLE001
+            logging.getLogger("sheenu.idempotency").warning("Réponse non mémorisée", exc_info=True)
 
 
 def purge_idempotency(hours: int = 48) -> int:
     """Efface les clés plus anciennes que `hours` (appelé par la supervision)."""
-    with SessionLocal() as db:
+    with AuxSession() as db:
         cutoff = datetime.fromtimestamp(time.time() - hours * 3600, UTC)
         rows = list(db.scalars(select(IdempotencyKey).where(IdempotencyKey.created_at < cutoff)))
         for r in rows:

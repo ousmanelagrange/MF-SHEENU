@@ -10,7 +10,7 @@ from uuid import UUID
 
 from fastapi import Request
 
-from app.core.db import SessionLocal
+from app.core.db import AuxSession
 from app.models import SecurityEvent
 
 log = logging.getLogger("sheenu.security")
@@ -56,7 +56,7 @@ def record(
         detail,
     )
     try:
-        with SessionLocal() as db:
+        with AuxSession() as db:
             db.add(
                 SecurityEvent(
                     kind=kind,

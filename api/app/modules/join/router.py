@@ -206,7 +206,7 @@ def list_requests(ctx: Ctx, status: str = JoinStatus.PENDING) -> list[JoinReques
 
 def _pending(ctx, request_id: UUID) -> JoinRequest:  # noqa: ANN001
     service.require_reviewer(ctx)
-    r = ctx.db.get(JoinRequest, request_id)
+    r = ctx.db.get(JoinRequest, request_id, with_for_update=True)  # relectures simultanées
     if r is None or r.family_id != ctx.family.id:
         raise not_found("Demande")
     if r.status != JoinStatus.PENDING:

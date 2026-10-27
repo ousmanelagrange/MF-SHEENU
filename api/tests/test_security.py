@@ -496,3 +496,30 @@ def test_platform_supervision_without_family_content(client):
     assert "disable_user" in actions and "view_users" in actions
     kinds = {e["kind"] for e in op.get("/platform/events").json()}
     assert {"login_failed", "account_disabled"} <= kinds
+
+
+def test_unexpected_errors_are_contained():
+    """Une erreur imprévue : réponse 500 propre (sans détail technique), incident journalisé."""
+    from fastapi.testclient import TestClient
+
+    def boom() -> None:
+        raise RuntimeError("détail interne qui ne doit pas sortir")
+
+    app.add_api_route("/api/v1/__boom", boom)
+    try:
+        client = TestClient(app, raise_server_exceptions=False)
+        r = client.get("/api/v1/__boom")
+        assert r.status_code == 500
+        assert r.json()["detail"]["code"] == "server_error"
+        assert "détail interne" not in r.text and "Traceback" not in r.text
+        with SessionLocal() as db:
+            assert (
+                db.execute(
+                    text("SELECT count(*) FROM security_event WHERE kind = 'server_error'")
+                ).scalar()
+                == 1
+            )
+    finally:
+        app.router.routes = [
+            r for r in app.router.routes if getattr(r, "path", "") != "/api/v1/__boom"
+        ]

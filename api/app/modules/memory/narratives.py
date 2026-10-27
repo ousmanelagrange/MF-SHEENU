@@ -152,7 +152,7 @@ def _tell_author(ctx, version: NarrativeText, accepted: bool) -> None:  # noqa: 
 def _reviewable(ctx, text_id: UUID) -> NarrativeText:  # noqa: ANN001
     if not service.is_curator(ctx):
         raise forbidden("La relecture est réservée aux gardiens de la mémoire.")
-    version = ctx.db.get(NarrativeText, text_id)
+    version = ctx.db.get(NarrativeText, text_id, with_for_update=True)  # relectures simultanées
     if version is None or version.family_id != ctx.family.id:
         raise not_found("Version")
     return version

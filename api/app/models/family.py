@@ -6,6 +6,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import (
+    BigInteger,
     DateTime,
     ForeignKey,
     String,
@@ -44,6 +45,9 @@ class Family(Base):
     settings: Mapped[dict] = mapped_column(JSONB, default=dict)
     created_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("app_user.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    # Incrémenté par la base à chaque changement de l'arbre (déclencheurs, migration 0009) :
+    # sert à savoir si l'arbre gardé en mémoire est encore à jour.
+    graph_version: Mapped[int] = mapped_column(BigInteger, default=0, server_default="0")
 
 
 class Membership(Base):

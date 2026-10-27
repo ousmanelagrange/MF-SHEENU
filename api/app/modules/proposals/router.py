@@ -35,7 +35,9 @@ def user_names(ctx: FamilyContext, proposals: list[Proposal]) -> dict[UUID, str]
 
 
 def get_proposal(ctx: FamilyContext, proposal_id: UUID) -> Proposal:
-    p = ctx.db.get(Proposal, proposal_id)
+    # Verrou de ligne : deux responsables qui valident au même instant passent l'un après
+    # l'autre, et le second voit « déjà traitée » au lieu d'appliquer le changement deux fois.
+    p = ctx.db.get(Proposal, proposal_id, with_for_update=True)
     if p is None or p.family_id != ctx.family.id:
         raise not_found("Proposition")
     return p

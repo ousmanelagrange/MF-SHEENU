@@ -6,12 +6,13 @@ personnes et liens une fois par requête, puis tous les calculs sont instantané
 
 from __future__ import annotations
 
-from collections import defaultdict, deque
+import threading
+from collections import OrderedDict, defaultdict, deque
 from dataclasses import dataclass, field
 from datetime import date
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.orm import Session
 
 from app.genealogy.kinship import blood_label, spouse_label
@@ -404,6 +405,61 @@ class FamilyGraph:
         return {"related": False, "label": None, "relation_type": "none", "path": []}
 
 
+# ---------- Cache de l'arbre ----------
+#
+# Charger l'arbre complet coûte plusieurs requêtes et quelques dizaines de millisecondes pour
+# une famille de mille personnes, à chaque appel. Chaque processus garde donc en mémoire l'arbre
+# des familles récemment consultées, avec la version de la famille (family.graph_version), que
+# la base incrémente à chaque changement de l'arbre (déclencheurs, migration 0009).
+#
+# L'arbre gardé en mémoire est construit dans une session à part puis détaché : ses objets ne
+# sont jamais partagés avec la session d'une requête (une annulation ne peut pas le corrompre).
+# On le traite en lecture seule ; pour modifier une personne, on la relit avec ctx.db.
+
+_CACHE: OrderedDict[UUID, tuple[int, UUID | None, FamilyGraph]] = OrderedDict()
+_CACHE_SIZE = 16
+_LOCK = threading.Lock()
+
+
 def load_graph(ctx) -> FamilyGraph:  # noqa: ANN001  (FamilyContext, import évité pour rester découplé)
-    """Charge le graphe de la famille courante d'une requête."""
-    return FamilyGraph.load(ctx.db, ctx.family.id, ctx.family.root_person_id)
+    """Arbre de la famille courante d'une requête, depuis la mémoire s'il est à jour."""
+    family_id, root_id = ctx.family.id, ctx.family.root_person_id
+    version = ctx.db.scalar(
+        text("SELECT graph_version FROM family WHERE id = :id"), {"id": family_id}
+    )
+    with _LOCK:
+        hit = _CACHE.get(family_id)
+        if hit and hit[0] == version and hit[1] == root_id:
+            _CACHE.move_to_end(family_id)
+            return hit[2]
+    committed, graph = _load_detached(family_id, root_id)
+    if committed != version:
+        # La requête a modifié l'arbre sans avoir encore validé : seule sa propre session voit
+        # ces changements. On charge donc l'arbre avec elle, et on ne le garde pas en mémoire.
+        return FamilyGraph.load(ctx.db, family_id, root_id)
+    with _LOCK:
+        _CACHE[family_id] = (version, root_id, graph)
+        _CACHE.move_to_end(family_id)
+        while len(_CACHE) > _CACHE_SIZE:
+            _CACHE.popitem(last=False)
+    return graph
+
+
+def _load_detached(family_id: UUID, root_id: UUID | None) -> tuple[int, FamilyGraph]:
+    """(version validée, arbre) lus dans une même transaction séparée, puis détachés."""
+    from app.core.db import AuxSession, set_family_context  # import tardif : évite un cycle
+
+    with AuxSession() as db:
+        set_family_context(db, family_id)
+        committed = db.scalar(
+            text("SELECT graph_version FROM family WHERE id = :id"), {"id": family_id}
+        )
+        graph = FamilyGraph.load(db, family_id, root_id)
+        db.expunge_all()
+        db.rollback()
+    return committed, graph
+
+
+def clear_graph_cache() -> None:
+    with _LOCK:
+        _CACHE.clear()

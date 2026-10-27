@@ -12,8 +12,36 @@ class Base(DeclarativeBase):
     pass
 
 
-engine = create_engine(get_settings().sqlalchemy_url, pool_pre_ping=True, future=True)
+_s = get_settings()
+
+# Garde-fous par connexion : une requête SQL qui dépasse 30 s est annulée, et une transaction
+# laissée ouverte sans activité plus de 60 s (client disparu, processus tué) est fermée par
+# PostgreSQL, ce qui libère ses verrous.
+GUARDS = (
+    {"options": "-c statement_timeout=30000 -c idle_in_transaction_session_timeout=60000"}
+    if _s.db_session_guards
+    else {}
+)
+
+engine = create_engine(
+    _s.sqlalchemy_url,
+    pool_pre_ping=True,
+    pool_size=_s.db_pool_size,
+    max_overflow=_s.db_max_overflow,
+    pool_timeout=10,  # sous très forte charge, échouer vite plutôt que bloquer
+    connect_args=GUARDS,
+)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
+
+# Pool séparé pour les tables de la plateforme (journaux, idempotence, compteurs), hors RLS
+aux_engine = create_engine(
+    _s.sqlalchemy_url,
+    pool_pre_ping=True,
+    pool_size=_s.db_aux_pool_size,
+    max_overflow=5,
+    pool_timeout=5,
+)
+AuxSession = sessionmaker(bind=aux_engine, autoflush=False, expire_on_commit=False)
 
 
 @event.listens_for(Session, "after_begin")

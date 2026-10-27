@@ -1,10 +1,11 @@
 """Routes du fil : publications, annonces, sondages, commentaires et réactions."""
 
 from datetime import UTC, datetime
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import APIRouter, Query
 from sqlalchemy import select
+from sqlalchemy.dialects.postgresql import insert
 
 from app.core.deps import Ctx
 from app.core.errors import bad_request, forbidden, not_found
@@ -142,17 +143,14 @@ def delete_post(post_id: UUID, ctx: Ctx) -> None:
 def react(post_id: UUID, body: ReactionIn, ctx: Ctx) -> None:
     """Une réaction par personne : la nouvelle remplace l'ancienne."""
     service.get_post(ctx, post_id)
-    existing = ctx.db.scalar(
-        select(Reaction).where(Reaction.post_id == post_id, Reaction.user_id == ctx.user.id)
+    # Insertion ou remplacement en une seule instruction : un double appui (deux requêtes au
+    # même instant) ne peut pas créer deux réactions ni échouer sur la contrainte d'unicité.
+    stmt = insert(Reaction).values(
+        id=uuid4(), family_id=ctx.family.id, post_id=post_id, user_id=ctx.user.id, emoji=body.emoji
     )
-    if existing:
-        existing.emoji = body.emoji
-    else:
-        ctx.db.add(
-            Reaction(
-                family_id=ctx.family.id, post_id=post_id, user_id=ctx.user.id, emoji=body.emoji
-            )
-        )
+    ctx.db.execute(
+        stmt.on_conflict_do_update(constraint="uq_reaction", set_={"emoji": stmt.excluded.emoji})
+    )
     ctx.db.commit()
 
 
@@ -173,17 +171,19 @@ def vote(post_id: UUID, body: VoteIn, ctx: Ctx) -> PostOut:
     option = ctx.db.get(PollOption, body.option_id)
     if option is None or option.post_id != post.id:
         raise not_found("Choix")
-    existing = ctx.db.scalar(
-        select(PollVote).where(PollVote.post_id == post.id, PollVote.user_id == ctx.user.id)
+    # Même principe que les réactions : un vote par membre, même en cas de double appui
+    stmt = insert(PollVote).values(
+        id=uuid4(),
+        family_id=ctx.family.id,
+        post_id=post.id,
+        option_id=option.id,
+        user_id=ctx.user.id,
     )
-    if existing:
-        existing.option_id = option.id
-    else:
-        ctx.db.add(
-            PollVote(
-                family_id=ctx.family.id, post_id=post.id, option_id=option.id, user_id=ctx.user.id
-            )
+    ctx.db.execute(
+        stmt.on_conflict_do_update(
+            constraint="uq_poll_vote", set_={"option_id": stmt.excluded.option_id}
         )
+    )
     ctx.db.commit()
     return service.posts_out(ctx, load_graph(ctx), [post])[0]
 

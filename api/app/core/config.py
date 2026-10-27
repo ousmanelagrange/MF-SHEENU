@@ -32,6 +32,16 @@ class Settings(BaseSettings):
     s3_secret_key: str | None = None
     s3_public_url: str | None = None
 
+    # Connexions à la base, par processus : le pool principal sert les requêtes ; un petit pool
+    # séparé sert les journaux techniques (sécurité, idempotence, compteurs), pour qu'une requête
+    # qui écrit un événement n'attende jamais une connexion du pool qu'elle occupe déjà.
+    db_pool_size: int = 10
+    db_max_overflow: int = 20
+    db_aux_pool_size: int = 3
+    # Délais de garde envoyés à l'ouverture de chaque connexion. À désactiver si le pooler de
+    # l'hébergeur les refuse : on les pose alors sur le rôle (voir docs/04-deploiement.md).
+    db_session_guards: bool = True
+
     # Limitation de débit (désactivée seulement dans les tests qui créent beaucoup de comptes)
     rate_limit: bool = True
 

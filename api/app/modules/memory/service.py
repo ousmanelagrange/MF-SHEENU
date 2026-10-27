@@ -80,6 +80,8 @@ def validate_text(ctx: FamilyContext, version: NarrativeText, note: str | None =
     comme « remplacée » pour garder l'historique des corrections."""
     if version.status != TextStatus.PENDING:
         raise bad_request("already_reviewed", "Cette version a déjà été relue.")
+    # Verrouille le récit : deux validations simultanées de la même couche s'enchaînent
+    ctx.db.get(Narrative, version.narrative_id, with_for_update=True)
     previous = ctx.db.scalars(
         select(NarrativeText).where(
             NarrativeText.narrative_id == version.narrative_id,

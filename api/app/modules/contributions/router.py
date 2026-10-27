@@ -318,7 +318,8 @@ def declare_payment(event_id: UUID, body: PaymentIn, ctx: Ctx) -> PaymentOut:
 
 
 def get_payment(ctx: FamilyContext, payment_id: UUID) -> ContributionPayment:
-    payment = ctx.db.get(ContributionPayment, payment_id)
+    # Verrou de ligne : un paiement n'est validé qu'une fois, même par deux trésoriers à la fois
+    payment = ctx.db.get(ContributionPayment, payment_id, with_for_update=True)
     if payment is None or payment.family_id != ctx.family.id:
         raise not_found("Paiement")
     return payment
