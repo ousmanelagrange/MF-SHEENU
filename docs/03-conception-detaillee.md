@@ -1,6 +1,6 @@
-# 03 — Conception détaillée (phases 1 et 2)
+# 03 — Conception détaillée (phases 1 à 3)
 
-> Version 1.1 — 27 octobre 2026. Sections 1 à 7 : phase 1 (le cœur). Section 8 : phase 2 (la gouvernance). L'organisation du code est décrite dans [05-guide-du-code.md](05-guide-du-code.md).
+> Version 1.1 — 27 octobre 2026. Sections 1 à 7 : phase 1 (le cœur). Section 8 : phase 2 (la gouvernance). Section 9 : phase 3 (les cotisations). L'organisation du code est décrite dans [05-guide-du-code.md](05-guide-du-code.md).
 
 ## 1. Modèle physique de données
 
@@ -542,3 +542,119 @@ Le bureau, ou un chef de branche pour sa branche, confie la fiche d'une personne
 | Web | Fiche | « Fiche gérée par » pour confier la fiche d'un ancien |
 | Web | `/donnees` | Export et import GEDCOM, doublons avec « Garder celle-ci » |
 | Mobile | Onglets | Arbre graphique, propositions à valider avec badge |
+
+
+## 9. Phase 3 — Cotisations
+
+### 9.1 Tables
+
+```mermaid
+erDiagram
+  family ||--o{ contribution_scale : "définit"
+  family ||--o{ contribution_event : "organise"
+  contribution_event ||--o{ contribution_due : "attend"
+  contribution_event ||--o{ contribution_payment : "reçoit"
+  person ||--o{ contribution_due : "doit"
+  person ||--o{ contribution_payment : "paie pour"
+
+  contribution_scale {
+    uuid id PK
+    varchar name
+    varchar currency
+    jsonb amounts_by_generation
+    int default_amount
+    int exempt_under_age
+    bool include_spouses
+    bool active
+  }
+  contribution_event {
+    uuid id PK
+    varchar title
+    varchar kind
+    varchar currency
+    date deadline
+    int target_amount
+    jsonb scale_snapshot
+    varchar status
+  }
+  contribution_due {
+    uuid id PK
+    uuid event_id FK
+    uuid person_id FK
+    int amount
+    bool exempt
+    varchar note
+  }
+  contribution_payment {
+    uuid id PK
+    uuid event_id FK
+    uuid person_id FK
+    int amount
+    varchar method
+    varchar reference
+    varchar proof_url
+    int original_amount
+    varchar original_currency
+    varchar status
+    uuid declared_by FK
+    uuid reviewed_by FK
+  }
+```
+
+Montants entiers dans la devise de l'événement (le franc CFA n'a pas de centimes). RLS sur les quatre tables (migration `0003`).
+
+### 9.2 Calcul des montants dus (RG-23, RG-24)
+
+À la création d'un événement avec barème, pour chaque personne **vivante** de l'arbre :
+1. si le barème exclut les conjoints et que la personne est entrée par mariage (aucun parent dans l'arbre, au moins une union, ni racine ni ascendant de la racine) : rien ;
+2. si son âge à la date du jour est connu et inférieur à `exempt_under_age` : rien ;
+3. sinon : `amounts_by_generation[génération]`, ou `default_amount` si sa génération n'y figure pas ; rien si le montant vaut 0.
+
+Le barème est recopié dans l'événement (`scale_snapshot`) : le modifier ensuite n'a aucun effet sur les collectes ouvertes. Le trésorier peut ajuster ou exempter une personne (avec une note) et en ajouter une. Sans barème, l'événement est une collecte libre, éventuellement avec un objectif.
+
+### 9.3 Paiements (RG-25, RG-26)
+
+```mermaid
+stateDiagram-v2
+  [*] --> Déclaré : un membre déclare (pour lui ou un proche)
+  [*] --> Validé : le trésorier saisit des espèces reçues
+  Déclaré --> Validé : le trésorier valide (montant corrigeable)
+  Déclaré --> Refusé : refus avec motif
+  Validé --> [*]
+  Refusé --> [*]
+```
+
+- Seuls les paiements **validés** comptent dans « payé ». Statut d'une personne : *exempté*, *à jour* (payé ≥ dû), *partiel*, *non payé*.
+- Un membre voit les paiements validés et ses propres déclarations ; les reçus ne sont visibles que du trésorier et de l'auteur.
+- **Clôture** : refusée tant qu'un paiement attend ; ensuite plus aucune modification (paiement, ajustement, intitulé).
+
+### 9.4 Points d'entrée
+
+| Méthode | Chemin | Rôle | Description |
+|---|---|---|---|
+| GET / POST | `/contributions/scales` | membre / trésorier | Barèmes |
+| PATCH | `/contributions/scales/{id}` | trésorier | Modifier, activer, désactiver |
+| GET / POST | `/contributions/events` | membre / trésorier | Collectes, avec totaux |
+| GET / PATCH | `/contributions/events/{id}` | membre / trésorier | Détail, modification |
+| POST | `/contributions/events/{id}/close` | trésorier | Clôture définitive |
+| GET | `/contributions/events/{id}/dues?status=&q=` | membre | État de chaque personne, par préséance |
+| POST | `/contributions/events/{id}/dues` | trésorier | Ajouter une personne |
+| PATCH | `/contributions/dues/{id}` | trésorier | Ajuster, exempter, noter |
+| GET / POST | `/contributions/events/{id}/payments` | membre | Paiements ; déclarer |
+| POST | `/contributions/payments/{id}/proof` | auteur, trésorier | Joindre le reçu |
+| POST | `/contributions/payments/{id}/validate` \| `reject` | trésorier | Valider (montant corrigeable) ou refuser avec motif |
+| GET | `/contributions/events/{id}/recap?only_unpaid=` | membre | Texte pour WhatsApp |
+| GET | `/contributions/events/{id}/export.csv` | membre | Export pour Excel (`;`, UTF-8 avec BOM) |
+| GET | `/contributions/persons/{id}` | membre | Historique d'une personne |
+
+Le trésorier (`treasurer`) et l'administrateur gèrent ; tout membre consulte et déclare.
+
+### 9.5 Écrans
+
+| Plateforme | Écran | Contenu |
+|---|---|---|
+| Web | `/cotisations` | Collectes en cours et clôturées, avancement, création |
+| Web | `/cotisations/:id` | Avancement, état par personne (recherche, filtres), paiements (validation), déclaration, récapitulatif WhatsApp, export, clôture |
+| Web | `/cotisations/baremes` | Barèmes : montant par génération, exemption d'âge, conjoints |
+| Web | Accueil, fiche | Mes cotisations en cours ; historique de la personne |
+| Mobile | Onglet Cotisations | Collectes, ma part, déclarer, valider (trésorier), état de chacun |
