@@ -1,11 +1,13 @@
+// Lien de parenté entre deux personnes : nom du lien et chemin par l'ancêtre commun.
+
 import { Button, Spin } from "antd";
 import { Fragment, useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router";
-import { api } from "../api";
-import { PageHead } from "../components/AppShell";
-import { Avatar, PersonPicker } from "../components/Person";
-import { useFamily } from "../family";
-import type { Kinship } from "../types";
+import { api } from "../../lib/api";
+import { PageHead } from "../../components/AppShell";
+import { Avatar, PersonPicker } from "../../components/Person";
+import { useFamily } from "../../lib/family";
+import type { Kinship } from "../../types";
 
 export function KinshipPage() {
   const { family } = useFamily();

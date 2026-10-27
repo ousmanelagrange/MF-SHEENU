@@ -1,9 +1,11 @@
+// Liste des personnes, triée par préséance, génération ou nom, avec recherche.
+
 import { useTable } from "@refinedev/antd";
 import { Button, Input, Segmented, Table } from "antd";
 import { useNavigate } from "react-router";
-import { PageHead } from "../components/AppShell";
-import { PersonLine } from "../components/Person";
-import type { PersonSummary } from "../types";
+import { PageHead } from "../../components/AppShell";
+import { PersonLine } from "../../components/Person";
+import type { PersonSummary } from "../../types";
 
 export function PersonsPage() {
   const navigate = useNavigate();

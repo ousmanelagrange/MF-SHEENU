@@ -105,7 +105,8 @@ def find_duplicates(graph: FamilyGraph) -> list[tuple[UUID, UUID]]:
     """Paires de fiches qui semblent être la même personne.
 
     Critères : même prénom et même nom (sans accents), années de naissance compatibles
-    (écart de 2 ans au plus, ou inconnue), et aucune filiation ni union entre les deux.
+    (écart de 2 ans au plus, ou inconnue), aucune filiation ni union entre les deux, et
+    pas de parents connus entièrement différents (cas des homonymes).
     """
     groups: dict[tuple[str, str], list[UUID]] = {}
     for pid, p in graph.persons.items():
@@ -122,6 +123,11 @@ def find_duplicates(graph: FamilyGraph) -> list[tuple[UUID, UUID]]:
                 if graph.is_descendant(a, b) or graph.is_descendant(b, a):
                     continue
                 if b in graph.spouses.get(a, set()):
+                    continue
+                # Homonymes : fréquents (enfant nommé d'après un aïeul). Si les deux fiches ont
+                # des parents connus et qu'ils sont tous différents, ce sont deux personnes.
+                parents_a, parents_b = graph.parents.get(a, set()), graph.parents.get(b, set())
+                if parents_a and parents_b and not parents_a & parents_b:
                     continue
                 pairs.append((a, b))
     return pairs

@@ -1,11 +1,13 @@
+// Accueil de la famille : chiffres clés, ma place dans la famille, répartition par génération et par pays.
+
 import { Button, Spin } from "antd";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { api } from "../api";
-import { PageHead } from "../components/AppShell";
-import { PersonLine } from "../components/Person";
-import { useFamily } from "../family";
-import type { PersonDetail, Stats } from "../types";
+import { api } from "../../lib/api";
+import { PageHead } from "../../components/AppShell";
+import { PersonLine } from "../../components/Person";
+import { useFamily } from "../../lib/family";
+import type { PersonDetail, Stats } from "../../types";
 
 export function HomePage() {
   const { family } = useFamily();

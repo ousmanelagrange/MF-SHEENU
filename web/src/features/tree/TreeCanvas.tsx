@@ -1,8 +1,10 @@
+// Dessin SVG de l'arbre avec zoom et déplacement. Les couleurs sont en attributs pour que l'export reste autonome.
+
 import { select } from "d3-selection";
 import { zoom, zoomIdentity, type ZoomBehavior } from "d3-zoom";
 import { forwardRef, useEffect, useImperativeHandle, useMemo, useRef } from "react";
-import { initials, lifeSpan } from "../components/Person";
-import type { PersonSummary } from "../types";
+import { initials, lifeSpan } from "../../components/Person";
+import type { PersonSummary } from "../../types";
 import {
   CARD_H,
   CARD_W,

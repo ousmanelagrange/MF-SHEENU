@@ -1,6 +1,10 @@
+// Coquille de l'application : barre latérale (marque, famille, navigation) et contenu.
+
 import {
   ApartmentOutlined,
   AuditOutlined,
+  CheckSquareOutlined,
+  DatabaseOutlined,
   CrownOutlined,
   HomeOutlined,
   MenuOutlined,
@@ -12,8 +16,9 @@ import { useGetIdentity, useLogout } from "@refinedev/core";
 import { Button, Menu, Spin } from "antd";
 import { useState } from "react";
 import { Navigate, Outlet, useLocation, useNavigate } from "react-router";
-import { useFamily } from "../family";
+import { useFamily } from "../lib/family";
 import { ROLE_LABELS } from "../types";
+import { useProposalCounts } from "../features/proposals/useProposalCounts";
 import { NtienyaBand, Wordmark } from "./Ntienya";
 
 export function AppShell() {
@@ -23,6 +28,8 @@ export function AppShell() {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const [open, setOpen] = useState(false);
+  const counts = useProposalCounts();
+  const pending = counts.to_review || 0;
 
   if (loading) {
     return (
@@ -38,10 +45,25 @@ export function AppShell() {
     { key: "/arbre", icon: <ApartmentOutlined />, label: "Arbre" },
     { key: "/personnes", icon: <TeamOutlined />, label: "Personnes" },
     { key: "/parente", icon: <NodeIndexOutlined />, label: "Lien de parenté" },
+    {
+      key: "/propositions",
+      icon: <CheckSquareOutlined />,
+      label: (
+        <span>
+          Propositions
+          {pending > 0 && (
+            <span className="nav-count" aria-label={`${pending} à valider`}>
+              {pending}
+            </span>
+          )}
+        </span>
+      ),
+    },
     ...(canInvite ? [{ key: "/membres", icon: <UserAddOutlined />, label: "Membres et invitations" }] : []),
     ...(isAdmin
       ? [
           { key: "/titres", icon: <CrownOutlined />, label: "Titres" },
+          { key: "/donnees", icon: <DatabaseOutlined />, label: "Données" },
           { key: "/journal", icon: <AuditOutlined />, label: "Journal" },
         ]
       : []),

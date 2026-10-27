@@ -1,6 +1,8 @@
+// Contexte de la famille courante : famille ouverte, rôle de l'utilisateur, changement de famille.
+
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 import { api, session } from "./api";
-import type { MyFamily } from "./types";
+import type { MyFamily } from "../types";
 
 type FamilyState = {
   family: MyFamily | null;

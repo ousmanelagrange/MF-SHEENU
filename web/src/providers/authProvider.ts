@@ -1,5 +1,7 @@
+// Fournisseur d'authentification Refine : connexion, inscription, déconnexion, identité.
+
 import type { AuthProvider } from "@refinedev/core";
-import { api, ApiError, session } from "../api";
+import { api, ApiError, session } from "../lib/api";
 
 type Tokens = { access_token: string; refresh_token: string };
 

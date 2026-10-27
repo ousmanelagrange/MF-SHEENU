@@ -1,3 +1,5 @@
+// Thème Ant Design et palette : indigo du ntienya, coton, laiton des titres, bois rouge.
+
 import type { ThemeConfig } from "antd";
 
 // Palette tirée du ntienya (ndop) bamoun : indigo teint à l'indigotier, coton non teint,

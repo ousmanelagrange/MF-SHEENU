@@ -1,6 +1,6 @@
 // Mise en page de l'arbre : descendance (vers le bas) ou ascendance (vers le haut).
 import { hierarchy, tree as d3tree, type HierarchyPointNode } from "d3-hierarchy";
-import type { PersonSummary, Tree } from "../types";
+import type { PersonSummary, Tree } from "../../types";
 
 export const CARD_W = 212;
 export const CARD_H = 66;

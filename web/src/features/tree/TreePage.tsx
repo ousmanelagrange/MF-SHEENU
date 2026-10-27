@@ -1,14 +1,16 @@
+// Page de l'arbre : choix de la vue, profondeur, recentrage, export, panneau de la personne sélectionnée.
+
 import { DownloadOutlined, MinusOutlined, PlusOutlined, ExpandOutlined } from "@ant-design/icons";
 import { Button, Drawer, Dropdown, Segmented, Select, Space, Spin, message } from "antd";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router";
-import { api } from "../api";
-import { Avatar, PersonPicker, TitleBadges, lifeSpan } from "../components/Person";
-import { useFamily } from "../family";
-import { download, exportTree } from "../tree/exporter";
-import { buildIndex, buildTree, type Mode } from "../tree/layout";
-import { TreeCanvas, type TreeCanvasHandle } from "../tree/TreeCanvas";
-import type { Kinship, Tree } from "../types";
+import { api } from "../../lib/api";
+import { Avatar, PersonPicker, TitleBadges, lifeSpan } from "../../components/Person";
+import { useFamily } from "../../lib/family";
+import { download, exportTree } from "./exporter";
+import { buildIndex, buildTree, type Mode } from "./layout";
+import { TreeCanvas, type TreeCanvasHandle } from "./TreeCanvas";
+import type { Kinship, Tree } from "../../types";
 
 export function TreePage() {
   const { family } = useFamily();

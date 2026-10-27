@@ -101,6 +101,13 @@ def test_duplicates_and_merge(api):
     assert api.get("/duplicates").json() == []
 
 
+def test_homonyms_with_different_parents_are_not_duplicates(api):
+    ids = build_family(api)
+    # Un autre « Ali », fils de Bachir : même nom que le fils d'Alpha, mais d'autres parents.
+    api.person("Ali", "M", parents=[ids["b1"]])
+    assert api.get("/duplicates").json() == []
+
+
 def test_merge_refuses_ancestor(api):
     ids = build_family(api)
     r = api.post(f"/persons/{ids['a']}/merge", {"other_id": ids["a1"]})

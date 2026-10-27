@@ -1,3 +1,5 @@
+// Types partagés, calqués sur les réponses de l'API.
+
 export type Sex = "M" | "F" | "U";
 
 export interface TitleBadge {

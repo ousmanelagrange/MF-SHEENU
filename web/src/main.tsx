@@ -1,3 +1,5 @@
+// Point d'entrée : polices auto-hébergées, styles, montage de l'application.
+
 import "@ant-design/v5-patch-for-react-19";
 import "@fontsource-variable/literata/opsz.css";
 import "@fontsource/instrument-sans/400.css";

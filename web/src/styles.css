@@ -709,3 +709,36 @@ body {
 .person-row__text .years {
   display: block;
 }
+
+/* Doublons : deux fiches côte à côte, chacune avec son bouton « Garder ». */
+.dup-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  padding: 12px 4px;
+}
+.dup-cell {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+@media (max-width: 640px) {
+  .dup-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.nav-count {
+  margin-left: 8px;
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--brass);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 20px;
+  display: inline-block;
+  text-align: center;
+}

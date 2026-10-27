@@ -1,11 +1,15 @@
+// Formulaire de création ou de modification d'une fiche.
+// Hors périmètre, l'enregistrement devient une proposition envoyée au chef de branche.
+
 import { Alert, App, Button, Checkbox, DatePicker, Form, Input, InputNumber, Select, Spin } from "antd";
 import dayjs, { type Dayjs } from "dayjs";
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router";
-import { api } from "../api";
-import { PageHead } from "../components/AppShell";
-import { PersonLine } from "../components/Person";
-import type { PersonDetail, PersonSummary } from "../types";
+import { api } from "../../lib/api";
+import { PageHead } from "../../components/AppShell";
+import { PersonLine } from "../../components/Person";
+import type { PersonDetail, PersonSummary } from "../../types";
+import { useSubmitOrPropose } from "../proposals/useSubmitOrPropose";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Values = Record<string, any> & { birth_date?: Dayjs; death_date?: Dayjs; is_living?: boolean };
@@ -22,6 +26,9 @@ export function PersonFormPage() {
   const [error, setError] = useState<string | null>(null);
   const [context, setContext] = useState<{ label: string; person: PersonSummary }[]>([]);
   const living = Form.useWatch("is_living", form) ?? true;
+  const { run } = useSubmitOrPropose();
+  // Valeurs d'origine en modification : une proposition ne porte que sur les champs changés.
+  const [initial, setInitial] = useState<Record<string, unknown>>({});
 
   const parent = params.get("parent");
   const parent2 = params.get("parent2");
@@ -31,6 +38,7 @@ export function PersonFormPage() {
   useEffect(() => {
     if (editing) {
       api<PersonDetail>(`/persons/${id}`).then((p) => {
+        setInitial(p as unknown as Record<string, unknown>);
         form.setFieldsValue({
           ...p,
           birth_date: p.birth_date ? dayjs(p.birth_date) : undefined,
@@ -68,27 +76,38 @@ export function PersonFormPage() {
       death_year: v.death_date ? null : (v.death_year ?? null),
     };
     try {
-      let saved: PersonDetail;
       if (editing) {
-        saved = await api<PersonDetail>(`/persons/${id}`, { method: "PATCH", body });
+        const changes = Object.fromEntries(
+          Object.entries(body).filter(([k, val]) => (initial[k] ?? null) !== (val ?? null)),
+        );
+        const outcome = await run(
+          () => api<PersonDetail>(`/persons/${id}`, { method: "PATCH", body }),
+          "update_person",
+          { person_id: id, changes },
+        );
+        if (outcome.status === "cancelled") return;
+        if (outcome.status === "done") message.success("Modifications enregistrées.");
+        navigate(`/personnes/${id}`);
       } else {
-        saved = await api<PersonDetail>("/persons", {
-          method: "POST",
-          body: {
-            ...body,
-            parent_ids: [parent, parent2].filter(Boolean),
-            spouse_id: spouse ?? undefined,
-          },
-        });
-        if (child) {
-          await api("/relations/parent-child", {
-            method: "POST",
-            body: { parent_id: saved.id, child_id: child },
-          });
+        const payload = {
+          ...body,
+          parent_ids: [parent, parent2].filter(Boolean),
+          child_ids: child ? [child] : [],
+          spouse_id: spouse ?? undefined,
+        };
+        const outcome = await run(
+          () => api<PersonDetail>("/persons", { method: "POST", body: payload }),
+          "create_person",
+          payload,
+        );
+        if (outcome.status === "cancelled") return;
+        if (outcome.status === "done") {
+          message.success("Fiche créée.");
+          navigate(`/personnes/${outcome.result.id}`);
+        } else {
+          navigate(`/personnes/${parent ?? spouse ?? child ?? ""}`);
         }
       }
-      message.success(editing ? "Modifications enregistrées." : "Fiche créée.");
-      navigate(`/personnes/${saved.id}`);
     } catch (e) {
       setError((e as Error).message);
     } finally {

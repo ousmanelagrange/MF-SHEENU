@@ -1,3 +1,5 @@
+// Application web : fournisseurs (thème, famille, Refine) et table des routes.
+
 import { Authenticated, Refine } from "@refinedev/core";
 import routerProvider from "@refinedev/react-router";
 import { App as AntApp, ConfigProvider } from "antd";
@@ -6,17 +8,21 @@ import dayjs from "dayjs";
 import "dayjs/locale/fr";
 import { BrowserRouter, Navigate, Outlet, Route, Routes } from "react-router";
 import { AppShell } from "./components/AppShell";
-import { FamilyProvider } from "./family";
-import { AuditPage, MembersPage, TitlesPage } from "./pages/AdminPages";
-import { LoginPage, RegisterPage } from "./pages/AuthPages";
-import { FamiliesPage } from "./pages/FamiliesPage";
-import { HomePage } from "./pages/HomePage";
-import { JoinPage } from "./pages/JoinPage";
-import { KinshipPage } from "./pages/KinshipPage";
-import { PersonFormPage } from "./pages/PersonFormPage";
-import { PersonPage } from "./pages/PersonPage";
-import { PersonsPage } from "./pages/PersonsPage";
-import { TreePage } from "./pages/TreePage";
+import { FamilyProvider } from "./lib/family";
+import { AuditPage } from "./features/audit/AuditPage";
+import { MembersPage } from "./features/members/MembersPage";
+import { TitlesPage } from "./features/titles/TitlesPage";
+import { LoginPage, RegisterPage } from "./features/auth/AuthPages";
+import { FamiliesPage } from "./features/families/FamiliesPage";
+import { HomePage } from "./features/home/HomePage";
+import { JoinPage } from "./features/auth/JoinPage";
+import { KinshipPage } from "./features/kinship/KinshipPage";
+import { PersonFormPage } from "./features/persons/PersonFormPage";
+import { PersonPage } from "./features/persons/PersonPage";
+import { PersonsPage } from "./features/persons/PersonsPage";
+import { DataPage } from "./features/data/DataPage";
+import { ProposalsPage } from "./features/proposals/ProposalsPage";
+import { TreePage } from "./features/tree/TreePage";
 import { authProvider } from "./providers/authProvider";
 import { dataProvider } from "./providers/dataProvider";
 import { theme } from "./theme";
@@ -65,6 +71,8 @@ export default function App() {
                     <Route path="/titres" element={<TitlesPage />} />
                     <Route path="/membres" element={<MembersPage />} />
                     <Route path="/journal" element={<AuditPage />} />
+                    <Route path="/propositions" element={<ProposalsPage />} />
+                    <Route path="/donnees" element={<DataPage />} />
                   </Route>
                 </Route>
                 <Route path="*" element={<Navigate to="/" replace />} />

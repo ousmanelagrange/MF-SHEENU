@@ -1,7 +1,9 @@
+// Pages de connexion et d'inscription, avec le panneau de tissu ntienya.
+
 import { useLogin, useRegister } from "@refinedev/core";
 import { Alert, Button, Form, Input } from "antd";
 import { Link, useSearchParams } from "react-router";
-import { NtienyaCloth, Wordmark } from "../components/Ntienya";
+import { NtienyaCloth, Wordmark } from "../../components/Ntienya";
 
 function AuthLayout({ children }: { children: React.ReactNode }) {
   return (

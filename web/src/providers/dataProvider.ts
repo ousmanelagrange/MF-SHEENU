@@ -1,5 +1,7 @@
+// Fournisseur de données Refine : traduit les appels génériques de Refine vers l'API Sheenu.
+
 import type { DataProvider } from "@refinedev/core";
-import { api } from "../api";
+import { api } from "../lib/api";
 
 // Ressource Refine → chemin de l'API
 const PATHS: Record<string, string> = {

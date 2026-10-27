@@ -1,11 +1,13 @@
+// Choix de la famille (deux au plus par compte) et création de l'espace d'une famille.
+
 import { useLogout } from "@refinedev/core";
 import { Alert, Button, Form, Input, Modal, Select, Spin } from "antd";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
-import { api } from "../api";
-import { NtienyaBand, Wordmark } from "../components/Ntienya";
-import { useFamily } from "../family";
-import { ROLE_LABELS, type MyFamily } from "../types";
+import { api } from "../../lib/api";
+import { NtienyaBand, Wordmark } from "../../components/Ntienya";
+import { useFamily } from "../../lib/family";
+import { ROLE_LABELS, type MyFamily } from "../../types";
 
 export function FamiliesPage() {
   const [items, setItems] = useState<MyFamily[] | null>(null);

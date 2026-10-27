@@ -1,7 +1,9 @@
+// Briques d'affichage d'une personne : portrait, badges de titres, ligne de liste, sélecteur avec recherche.
+
 import { Select, Spin } from "antd";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router";
-import { api } from "../api";
+import { api } from "../lib/api";
 import type { PersonSummary, TitleBadge } from "../types";
 
 export function initials(p: Pick<PersonSummary, "first_name" | "last_name">) {

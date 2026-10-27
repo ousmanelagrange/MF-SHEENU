@@ -1,9 +1,11 @@
+// Rejoindre une famille depuis un lien d'invitation : aperçu, création de compte ou connexion, acceptation.
+
 import { Alert, Button, Result, Spin } from "antd";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router";
-import { api, session } from "../api";
-import { useFamily } from "../family";
-import type { MyFamily } from "../types";
+import { api, session } from "../../lib/api";
+import { useFamily } from "../../lib/family";
+import type { MyFamily } from "../../types";
 import { AuthLayout } from "./AuthPages";
 
 type Preview = {
